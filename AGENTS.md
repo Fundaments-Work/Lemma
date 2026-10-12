@@ -4,40 +4,57 @@
 
 ```bash
 pnpm install
-pnpm run build        # typecheck + bundle
-pnpm run lint         # eslint
-pnpm run lint:fix     # auto-fix lint
-pnpm run dev          # dev mode (no typecheck, sourcemaps)
+pnpm test          # vitest test suite (39 tests)
+pnpm run build     # typecheck + bundle
+pnpm run lint      # eslint with eslint-plugin-obsidianmd
+pnpm run lint:fix  # auto-fix lint
+pnpm run dev       # dev mode (watch, sourcemaps)
 node deploy.mjs <vault-path>   # copy built files to vault
 ```
 
+## Organization & links
+
+- **Organization**: Fundaments Work
+- **Repository**: [Fundaments-Work/Lemma](https://github.com/Fundaments-Work/Lemma)
+- **Sponsorship**: [Buy Me a Momo](https://buymemomo.com/usefundaments)
+
 ## Code conventions
 
-- **Sentence case** for labels: "API configuration" not "API Configuration"
+- **Sentence case** for all UI labels: "API configuration", not "API Configuration"
+- **Clean documentation**: No emojis in release notes, changelogs, or official guides
 - **No comments** unless explaining a non-obvious tradeoff
-- **fsrs-** prefix for all CSS classes in `styles.css`
+- **fsrs-** prefix for plugin UI CSS classes in `styles.css`
 - **DataManager** owns all state; UI classes read from it, never duplicate state
 - Settings are read/written through `plugin.settings` + `plugin.saveSettings()`
 - Save settings immediately on every `onChange`, don't batch
 - Use `isRecord()` and `getErrorMessage()` for safe unknown-type handling
 
-## Architecture at a glance
+## Architecture
 
 ```
-main.ts (single file, ~2300 lines)
-├── FSRSFlashcardsPlugin (main class)
-├── DataManager (all data, FSRS, sync orchestration)
-├── DashboardView (ItemView — deck list)
-├── ReviewModal (Modal — study session)
-├── BrowseModal (Modal — browse cards)
-├── StatsModal (Modal — Chart.js stats)
-├── CustomStudyModal (Modal — filtered study)
-├── ResetProgressModal (Modal — nuclear reset)
-└── FSRSSettingsTab (PluginSettingTab — 4 tabs)
-
-src/database/
-├── PouchDBManager.ts  (IndexedDB + CouchDB sync)
-└── DataMigration.ts   (legacy JSON → PouchDB)
+main.ts                   # Re-exports from src/plugin/main
+src/
+├── plugin/
+│   └── main.ts           # Plugin lifecycle, commands, ribbon, debounced vault events
+├── data/
+│   ├── DataManager.ts    # State orchestration, mtime caching, tag parsing, FSRS scheduling
+│   ├── constants.ts      # Constants, defaults, Lucide-standard SVG icon, hash utilities
+│   └── types.ts          # Type definitions (Card, Deck, FSRS, Settings)
+├── database/
+│   ├── PouchDBManager.ts # IndexedDB storage + live CouchDB sync
+│   └── DataMigration.ts  # Legacy data.json -> PouchDB migration
+└── ui/
+    ├── DashboardView.ts  # ItemView — deck list, stats, action bar
+    ├── ReviewModal.ts    # Study session with swipe gestures and in-place image peek
+    ├── ReviewNoteModal.ts# Whole-note (#review) study session
+    ├── BrowseModal.ts    # Card search and browser
+    ├── StatsModal.ts     # Chart.js analytics and forecast
+    ├── CustomStudyModal.ts# Filtered study queue
+    ├── CreateCardModal.ts# Guided card creation with live preview
+    ├── CreateDeckModal.ts# Guided deck creation modal
+    ├── HelpModal.ts      # In-app markdown documentation viewer
+    ├── ResetProgressModal.ts # Progress reset modal
+    └── FSRSSettingsTab.ts# 4-tab settings interface
 ```
 
 ## Important patterns to follow
@@ -49,49 +66,52 @@ Use the 4-tab pattern from `FSRSSettingsTab`:
 - Use `new Setting(containerEl).setName(...).setHeading()` for section titles
 - No manual `<h3>` or HTML headings in settings
 
-### Data flow
-```
-vault event → updateFile() → recalculateAllDeckStats() → refreshDashboardView()
-review      → updateCard() → saveCardState()/addReviewLog() (PouchDB) or saveData() (JSON)
-```
+### Performance & vault events
+- `vault.on('modify')` and `vault.on('create')` batch files into a `pendingModifiedFiles: Set<TFile>` debounced at 350ms to eliminate typing latency
+- `DataManager.hasTag()` performs zero-allocation checks against `metadataCache`
+- `DataManager.updateFile()` checks `file.stat.mtime` against cached timestamps to skip unchanged notes without reading disk
+- Heading breadcrumbs are pre-computed in a single $O(N)$ pass (`buildHeadingBreadcrumbs`) for $O(1)$ lookup per card
+
+### In-app vector icon
+- Registered via `addIcon(LEMMA_ICON_ID, LEMMA_ICON_SVG)`
+- Must follow Obsidian Lucide specification (`0 0 100 100` viewBox, `stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"`)
+- Do not apply `stroke: none` to `svg.lemma-icon` in `styles.css`
+
+### Card syntax & formats
+1. **Basic**: `---card---` followed by `---` divider
+2. **Single-line**: `Question::Answer`
+3. **Reversed**: `Question:::Answer`
+4. **Cloze deletion**: `==c1::hidden text==`
+5. **In-place image occlusion**: `![[image-front.png]]::![[image-back.png]]` (auto-detected, in-place peek toggle)
+6. **Type-in active recall**: `?type` flag in single-line (`Q::A ?type`) or block format (`---card--- ?type`)
+7. **Whole-note review**: `#review` tag in frontmatter or body
 
 ### Card IDs
 - With block ID (`^abc123`): `deckId::blockId`
 - Without: `cyrb53hex(filePath + '::' + front)` or `cyrb53hex(filePath + '::' + paragraph + '::' + clozeNum)`
 
 ### FSRS state machine
-- `State.New` → no fsrsData or state is New
-- `State.Learning` / `State.Relearning` → counts as "learning"
-- `State.Review` → stability < 21 = "young", >= 21 = "mature"
+- `State.New` -> no fsrsData or state is New
+- `State.Learning` / `State.Relearning` -> counts as "learning"
+- `State.Review` -> stability < 21 = "young", >= 21 = "mature"
 
 ### Sync
 - PouchDB sync is live+retry by default
-- Manual sync for dashboard button and settings test
+- Manual sync available via dashboard button and settings test
 - Credentials embedded in URL (sanitized for logging)
 - Fatal HTTP statuses (401/403/404) cancel sync
 
 ## Testing
 
-There is no test framework. Validate by:
-1. `pnpm run build` (typecheck + bundle)
-2. `pnpm run lint`
-3. Deploy to vault, reload Obsidian, manually verify
+Validate by:
+1. `pnpm test` (Vitest: 39 tests covering card parsing, data manager, and image occlusion)
+2. `pnpm run lint` (ESLint: strict Obsidian plugin rules, zero warnings/errors required)
+3. `pnpm run build` (TypeScript check + esbuild production bundle)
+4. `node deploy.mjs <vault-path>` (deploy to test vault)
 
 ## Release
 
-Pushing a semver tag (e.g., `1.0.2`) triggers `.github/workflows/release.yml`:
-lints → builds → creates GitHub release with `main.js`, `manifest.json`, `styles.css`.
+Pushing a semver tag without `v` prefix (e.g. `1.1.3`) triggers `.github/workflows/release.yml`:
+Validates semver -> checks manifest version -> lints -> builds -> creates GitHub release with `main.js`, `manifest.json`, `styles.css`.
 
 **Do not push release tags unless explicitly asked.**
-
-## Key files
-
-| File | Purpose |
-|---|---|
-| `main.ts` | All plugin logic (~2300 lines) |
-| `styles.css` | All styles (~1350 lines) |
-| `src/database/PouchDBManager.ts` | IndexedDB + CouchDB sync layer |
-| `src/database/DataMigration.ts` | Legacy data migration |
-| `manifest.json` | Plugin metadata + version |
-| `deploy.mjs` | Copies built files to vault |
-| `esbuild.config.mjs` | Bundler config |
