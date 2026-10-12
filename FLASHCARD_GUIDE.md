@@ -8,11 +8,16 @@ A complete guide to creating flashcards in Obsidian using the Lemma plugin.
 
 1. [Getting Started](#getting-started)
 2. [Basic Cards](#basic-cards)
-3. [Cloze Deletion Cards](#cloze-deletion-cards)
-4. [Card IDs & Editing](#card-ids--editing)
-5. [Markdown Support](#markdown-support)
-6. [Quick Commands](#quick-commands)
-7. [Best Practices](#best-practices)
+3. [Single-Line & Reversed Cards](#single-line--reversed-cards)
+4. [Cloze Deletion Cards](#cloze-deletion-cards)
+5. [Image Occlusion Cards](#image-occlusion-cards-in-place-display)
+6. [Type-In Active Recall Cards](#type-in-active-recall-cards)
+7. [Whole-Note Review](#whole-note-review)
+8. [Guided Card & Deck Creation](#guided-card--deck-creation)
+9. [Card IDs & Editing](#card-ids--editing)
+10. [Markdown Support](#markdown-support)
+11. [Quick Commands & Shortcuts](#quick-commands)
+12. [Best Practices](#best-practices)
 
 ---
 
@@ -242,25 +247,163 @@ See also: [[Geometry Basics]]
 
 ---
 
+## Single-Line & Reversed Cards
+
+Single-line cards let you author atomic question-answer pairs quickly on a single line.
+
+### Syntax
+
+```markdown
+Question::Answer ^block-id
+Reversed Question:::Reversed Answer ^block-id
+```
+
+- `::` creates a standard flashcard (prompt front, reveal back).
+- `:::` creates a bidirectional / reversed card (prompts back, tests front) for two-way recall like vocabulary.
+- An optional `^block-id` stabilizes card history.
+
+### Examples
+
+```markdown
+What is the speed of sound in air?::Approximately 343 m/s ^snd-001
+Neuron Soma:::Cell body containing the nucleus and organelles ^neuro-002
+```
+
+---
+
+## Image Occlusion Cards (In-Place Display)
+
+Image occlusion cards swap occluded diagrams with unmasked answer diagrams directly in-place without vertical displacement.
+
+### Syntax
+
+Single-line or block syntax where both front and back contain image embeds:
+
+```markdown
+![[diagram-masked.png]]::![[diagram-revealed.png]] ^occlusion-001
+```
+
+Or block format:
+```markdown
+---card--- ^occlusion-002
+![[anatomy-masked.svg|500]]
+---
+![[anatomy-revealed.svg|500]]
+```
+
+### Review Interactions
+- **In-place swap**: Revealing the answer replaces the occluded diagram with the revealed diagram at the exact same position.
+- **Tap to peek**: Tap/click the diagram or press `Space` / `P` / `F` to toggle back and forth between the occluded question and revealed answer masks before submitting your rating.
+- **Responsive scaling**: Tall diagrams are contained within viewport limits (`70vh` desktop, `45vh` landscape) with drag and text selection disabled on mobile.
+
+---
+
+## Type-In Active Recall Cards
+
+Type-in cards require you to actively type your answer before viewing the correct answer and rating options.
+
+### Syntax
+
+Add `?type` to single-line or block cards:
+
+```markdown
+?type What is the capital of Canada?::Ottawa ^type-001
+```
+
+Or block format:
+```markdown
+---card--- ?type ^type-002
+What is the SI unit of force?
+---
+Newton
+```
+
+### Review Experience
+During review, an input box appears. Press `Enter` or click `Check` to receive instant feedback:
+- **Correct** (exact match)
+- **Close match** (keyword match)
+- **Not correct**
+Full rating buttons (`Again`, `Hard`, `Good`, `Easy`) are revealed for honest self-assessment.
+
+---
+
+## Whole-Note Review
+
+Apply FSRS spaced repetition to entire notes instead of breaking them into flashcards.
+
+### Syntax
+
+Add `#review` to frontmatter or anywhere in the note body:
+
+```yaml
+---
+tags: [review]
+---
+# Quantum Mechanics Summary
+```
+
+Study whole notes via the command `Review due notes`.
+
+---
+
+## Guided Card & Deck Creation
+
+Lemma includes interactive modals so you never have to memorize Markdown delimiters.
+
+### 1. Guided Card Creator Modal
+Run the command `Create card (guided modal)` or click **+ New card** on the Lemma dashboard:
+- Pick the target deck note.
+- Select card type from the dropdown.
+- Fill in the Question and Answer fields.
+- View live Markdown syntax preview.
+- Press `Ctrl + Enter` (or `Cmd + Enter`) to insert the card with an automatic block ID and auto-deck tag.
+
+### 2. Guided Deck Creator Modal
+Click **+ New deck** on the Lemma dashboard or run the command `Create new deck`:
+- Enter deck title.
+- Optional folder path.
+- Automatically creates the note, tags it with `#flashcards`, and opens it.
+
+### 3. Tag Note as Flashcard Deck
+Run the command `Tag current note as flashcard deck` on any existing note to immediately register it in Lemma.
+
+---
+
 ## Quick Commands
 
 | Command | Action | Hotkey |
 |---------|--------|--------|
+| `Create card (guided modal)` | Open interactive card creator | - |
+| `Create new deck` | Create note pre-tagged as a deck | - |
+| `Tag current note as flashcard deck` | Add deck tag to active file | - |
 | `Add a new flashcard` | Insert basic card template | - |
+| `Add a single-line card` | Insert `Q::A` template | - |
+| `Add a reversed card` | Insert `Q:::A` template | - |
+| `Add a cloze card` | Insert cloze template | - |
+| `Create cloze from selection` | Wrap selected text in `==c1::...==` | - |
+| `Add a type-in card` | Insert type-in block card template | - |
+| `Add a type-in single-line card` | Insert `Q::A ?type` template | - |
 | `Open dashboard` | Open study dashboard | - |
+| `Review due notes` | Start whole-note review queue | - |
 | `Sync Now` | Manual sync (if enabled) | - |
 | `Check Sync Status` | View sync status | - |
 
-### Review Session Hotkeys
+### Review Session Hotkeys & Gestures
 
-| Key | Action |
-|-----|--------|
+| Key / Gesture | Action |
+|---------------|--------|
 | `Space` / `Enter` | Show answer |
+| `Space` / `P` / `F` | Peek / toggle between occluded & answer masks (image cards) |
 | `1` | Rate: Again |
 | `2` | Rate: Hard |
 | `3` | Rate: Good |
 | `4` | Rate: Easy |
+| `Esc` | Exit review session |
 | `←` / `→` | Navigate (Browse mode) |
+| `Swipe left` | Rate: Again |
+| `Swipe down` | Rate: Hard |
+| `Swipe right` | Rate: Good |
+| `Swipe up` | Rate: Easy |
 
 ---
 
@@ -383,6 +526,15 @@ The ==c1::Forgetting Curve== was discovered by ==c2::Hermann Ebbinghaus== in ==c
 
 FSRS stands for ==c1::Free Spaced Repetition Scheduler==. ^sr-002
 ```
+
+---
+
+## Support Development
+
+If Lemma helps you learn faster and retain more knowledge, consider supporting its development:
+
+- **Buy Me a Momo:** [buymemomo.com/usefundaments](https://buymemomo.com/usefundaments)
+- **GitHub:** [github.com/Fundaments-Work/Lemma](https://github.com/Fundaments-Work/Lemma)
 
 ---
 

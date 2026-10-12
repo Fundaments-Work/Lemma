@@ -1,12 +1,12 @@
 # Lemma — Project status
 
-## Current state (v1.1.0-dev)
+## Current state (v1.1.3)
 
 All core features are implemented and functional:
 
 ### Phase 1 — Foundation (completed)
 - [x] Modular code structure (`src/data/`, `src/ui/`, `src/plugin/`)
-- [x] Test suite — Vitest, 18 tests, Obsidian + PouchDB mocks
+- [x] Test suite — Vitest, 39 tests, Obsidian + PouchDB mocks
 - [x] Single-line card syntax (`Q::A` basic, `Q:::A` reversed)
 - [x] Stable block IDs for single-line cards (`^blockId` suffix)
 - [x] Whole-note review (`#review` tag system)
@@ -24,7 +24,7 @@ All core features are implemented and functional:
 - [x] Legacy JSON storage fallback
 - [x] CouchDB sync (live + manual)
 - [x] Data migration (JSON → PouchDB)
-- [x] 4-tab settings UI
+- [x] 4-tab settings UI (spacious and native)
 - [x] Reset progress (nuclear option)
 - [x] Responsive/mobile design
 - [x] Sync to Obsidian community plugin list
@@ -32,8 +32,18 @@ All core features are implemented and functional:
 ### Phase 2 — Differentiators (in progress)
 - [x] FSRS weight optimizer (evolutionary strategy, pure TypeScript)
 - [x] Swipe gesture review (left/right/up/down, pointer events)
+- [x] Type-in-answer cards (active recall typing with ?type flag)
+- [x] In-place image occlusion display (auto-detect, tap-to-flip/peek, responsive viewport containment)
+- [x] Guided card creation modal (`CreateCardModal` with type dropdown and live preview)
+- [x] Guided deck creation modal (`CreateDeckModal` with auto `#flashcards` tagging)
+- [x] Official custom Lemma SVG brand icon registration via Obsidian API `addIcon` (native monochrome `currentColor`)
+- [x] Organization migration to `Fundaments-Work/Lemma` & Buy Me a Momo sponsorship integration
+- [x] Performance architecture:
+  - Debounced vault event processing (350ms batching into `Set<TFile>`)
+  - Zero-allocation tag cache checks (`hasTag` fast path)
+  - File modification time caching (`fileMtimes`) skipping unchanged notes
+  - Single-pass O(N) pre-computed heading breadcrumbs
 - [ ] **Stats v2** — retention curve, maturity donut, monthly heatmap, interval histogram, per-deck breakdown
-- [ ] Type-in-answer cards (active recall typing)
 - [ ] Per-deck settings overrides
 
 ### Phase 3 — Polish (planned)
@@ -45,9 +55,8 @@ All core features are implemented and functional:
 ## Known gaps & pain points
 
 ### Performance
-- `buildIndex()` reads every markdown file in the vault — should track modified times
 - `updateCard()` writes to PouchDB one doc at a time — batch writes would reduce IndexedDB overhead
-- `recalculateAllDeckStats()` iterates all cards — spread across idle cycles
+- `recalculateAllDeckStats()` iterates all cards — can be spread across idle cycles on massive vaults (50k+ cards)
 
 ### Type errors
 - `@types/pouchdb` has incompatible type definitions, suppressed via `skipLibCheck`
@@ -59,20 +68,19 @@ All core features are implemented and functional:
 
 ## Near-term priorities
 
-1. **Stats v2** — deeper learning analytics
-2. **Type-in-answer cards** — active recall typing
-3. **Per-deck settings** — per-deck new/review limits
-4. **Performance** — diff-based rebuild, batch PouchDB writes
+1. **Stats v2** — deeper learning analytics (retention curve, maturity donut, interval histogram)
+2. **Per-deck settings** — per-deck new/review limits & desired retention overrides
+3. **PouchDB write batching** — batch review logs to reduce IndexedDB write cycles
+4. **Data export/import** — JSON/Anki package backup and restore
 5. **i18n** — extract UI strings for community translation
 
 ## Long-term possibilities
 
 - Deck templates (custom card CSS per deck)
-- Image occlusion cards
 - Obsidian Sync native support (vs CouchDB)
 - Shared deck marketplace via CouchDB
 - Collaborative decks (real-time shared review)
 
 ---
 
-*Last updated: 2026-07-16*
+*Last updated: 2026-10-12*

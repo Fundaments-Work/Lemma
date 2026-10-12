@@ -1,6 +1,7 @@
 import { App, Modal, ButtonComponent, Component, MarkdownRenderer, Notice, setIcon } from 'obsidian';
 import { Rating } from 'ts-fsrs';
 import type { Card } from '../data/types';
+import { isInPlaceImageCard } from '../data/constants';
 
 type FSRSFlashcardsPlugin = import('../plugin/main').FSRSFlashcardsPlugin;
 
@@ -13,10 +14,13 @@ export class ReviewModal extends Modal {
     private deckName: string | null;
     private currentCardIndex = 0;
     private state: 'question' | 'answer' = 'question';
+    private isInPlaceImage = false;
+    private activeInPlaceView: 'question' | 'answer' = 'question';
     private cardContainer: HTMLElement;
     private frontEl: HTMLElement;
     private backEl: HTMLElement;
     private answerContainer: HTMLElement;
+    private inplaceIndicatorEl: HTMLElement;
     private controlsContainer: HTMLElement;
     private showAnswerButton: ButtonComponent;
     private renderComponent: Component = new Component();
@@ -100,6 +104,8 @@ export class ReviewModal extends Modal {
         this.answerContainer.hide();
         this.answerContainer.createEl('hr');
         this.backEl = this.answerContainer.createDiv({ cls: 'fsrs-card-back' });
+        this.inplaceIndicatorEl = this.cardContainer.createDiv({ cls: 'fsrs-inplace-indicator' });
+        this.inplaceIndicatorEl.hide();
 
         const bottomControlsContainer = container.createDiv({ cls: 'fsrs-bottom-controls' });
 
@@ -206,7 +212,7 @@ export class ReviewModal extends Modal {
         }
     }
 
-    private onGestureEnd(_e: PointerEvent) {
+    private onGestureEnd(e: PointerEvent) {
         if (!this.isGesturing) return;
         this.isGesturing = false;
 
@@ -217,7 +223,12 @@ export class ReviewModal extends Modal {
         this.cardContainer.setCssProps({ '--fsrs-swipe-dx': '', '--fsrs-swipe-dy': '', '--fsrs-swipe-rot': '' });
         this.cardContainer.removeClass('fsrs-swipe-left', 'fsrs-swipe-right', 'fsrs-swipe-up', 'fsrs-swipe-down');
 
-        if (!direction || this.state !== 'answer') return;
+        if (!direction || this.state !== 'answer') {
+            if (e.type === 'pointerup' && this.isInPlaceImage && this.state === 'answer' && Math.hypot(dx, dy) < 10) {
+                this.toggleInPlaceView();
+            }
+            return;
+        }
 
         const ratingMap: Record<string, Rating> = {
             left: Rating.Again,
@@ -272,6 +283,16 @@ export class ReviewModal extends Modal {
 
         this.state = 'question';
         const card = this.getCurrentCard();
+        this.isInPlaceImage = card.type !== 'typein' && isInPlaceImageCard(card);
+        this.activeInPlaceView = 'question';
+
+        if (this.isInPlaceImage) {
+            this.cardContainer.addClass('fsrs-card-inplace');
+        } else {
+            this.cardContainer.removeClass('fsrs-card-inplace');
+        }
+        this.inplaceIndicatorEl.hide();
+
         const deckPrefix = this.deckName ? this.deckName : 'Reviewing';
         this.titleEl.empty();
         this.titleEl.createSpan({ text: deckPrefix });
@@ -290,6 +311,7 @@ export class ReviewModal extends Modal {
             }
         }
 
+        this.frontEl.show();
         await MarkdownRenderer.render(this.app, card.front, this.frontEl, card.filePath, this.renderComponent);
         await MarkdownRenderer.render(this.app, card.back, this.backEl, card.filePath, this.renderComponent);
 
@@ -314,7 +336,34 @@ export class ReviewModal extends Modal {
         this.state = 'answer';
         this.showAnswerButton.buttonEl.hide();
         this.controlsContainer.show();
-        this.answerContainer.show();
+
+        if (this.isInPlaceImage) {
+            this.frontEl.hide();
+            this.answerContainer.show();
+            this.activeInPlaceView = 'answer';
+            this.inplaceIndicatorEl.setText('Answer (tap to peek question)');
+            this.inplaceIndicatorEl.show();
+        } else {
+            this.frontEl.show();
+            this.answerContainer.show();
+            this.inplaceIndicatorEl.hide();
+        }
+    }
+
+    private toggleInPlaceView() {
+        if (!this.isInPlaceImage || this.state !== 'answer') return;
+
+        if (this.activeInPlaceView === 'answer') {
+            this.activeInPlaceView = 'question';
+            this.frontEl.show();
+            this.answerContainer.hide();
+            this.inplaceIndicatorEl.setText('Question (tap to see answer)');
+        } else {
+            this.activeInPlaceView = 'answer';
+            this.frontEl.hide();
+            this.answerContainer.show();
+            this.inplaceIndicatorEl.setText('Answer (tap to peek question)');
+        }
     }
 
     private handleRating(rating: Rating) {
@@ -347,6 +396,11 @@ export class ReviewModal extends Modal {
         }
 
         if (this.state === 'answer') {
+            if (this.isInPlaceImage && (evt.key === ' ' || evt.key === 'Enter' || evt.key === 'p' || evt.key === 'f')) {
+                evt.preventDefault();
+                this.toggleInPlaceView();
+                return;
+            }
             switch (evt.key) {
                 case '1':
                     evt.preventDefault();

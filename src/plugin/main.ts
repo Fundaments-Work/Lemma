@@ -1,10 +1,12 @@
-import { Editor, Notice, Plugin, TFile, debounce, setIcon } from 'obsidian';
+import { Editor, Notice, Plugin, TFile, addIcon, debounce, setIcon } from 'obsidian';
 import { DataManager } from '../data/DataManager';
-import { VIEW_TYPE_DASHBOARD, VIEW_ICON_NAME, STATUS_ICON_NAME, DEFAULT_SETTINGS, generateBlockId, getDocCount } from '../data/constants';
+import { VIEW_TYPE_DASHBOARD, VIEW_ICON_NAME, STATUS_ICON_NAME, DEFAULT_SETTINGS, generateBlockId, getDocCount, LEMMA_ICON_ID, LEMMA_ICON_SVG } from '../data/constants';
 import type { FSRSSettings, PluginData } from '../data/types';
 import { DashboardView } from '../ui/DashboardView';
 import { FSRSSettingsTab } from '../ui/FSRSSettingsTab';
 import { ResetProgressModal } from '../ui/ResetProgressModal';
+import { CreateCardModal } from '../ui/CreateCardModal';
+import { CreateDeckModal } from '../ui/CreateDeckModal';
 
 class FSRSFlashcardsPlugin extends Plugin {
     settings: FSRSSettings;
@@ -12,6 +14,7 @@ class FSRSFlashcardsPlugin extends Plugin {
 
     async onload() {
         console.debug('Loading Lemma plugin');
+        addIcon(LEMMA_ICON_ID, LEMMA_ICON_SVG);
         await this.loadSettings();
         this.dataManager = new DataManager(this);
 
@@ -42,52 +45,88 @@ class FSRSFlashcardsPlugin extends Plugin {
             void this.activateView();
         });
         this.addCommand({
+            id: 'create-card-modal',
+            name: 'Create card (guided modal)',
+            callback: () => {
+                new CreateCardModal(this.app, this).open();
+            },
+        });
+        this.addCommand({
+            id: 'create-deck',
+            name: 'Create new deck',
+            callback: () => {
+                new CreateDeckModal(this.app, this).open();
+            },
+        });
+        this.addCommand({
+            id: 'tag-note-as-deck',
+            name: 'Tag current note as flashcard deck',
+            checkCallback: (checking: boolean) => {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (!activeFile) return false;
+                if (!checking) {
+                    void this.dataManager.ensureDeckTag(activeFile);
+                }
+                return true;
+            },
+        });
+        this.addCommand({
             id: 'add-fsrs-flashcard',
             name: 'Add a new flashcard',
             editorCallback: (editor: Editor) => {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (activeFile) void this.dataManager.ensureDeckTag(activeFile);
                 const blockId = generateBlockId();
-                const template = `\n\n---card--- ^${blockId}\n\n---\n\n`;
+                const template = `\n\n---card--- ^${blockId}\nQuestion: \n---\nAnswer: \n\n`;
                 const cursor = editor.getCursor();
                 editor.replaceRange(template, cursor);
-                editor.setCursor({ line: cursor.line + 3, ch: 0 });
+                editor.setCursor({ line: cursor.line + 3, ch: 10 });
             },
         });
         this.addCommand({
             id: 'add-single-line-card',
             name: 'Add a single-line card',
             editorCallback: (editor: Editor) => {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (activeFile) void this.dataManager.ensureDeckTag(activeFile);
                 const blockId = generateBlockId();
                 const template = `\nQuestion::Answer ^${blockId}`;
                 const cursor = editor.getCursor();
                 editor.replaceRange(template, cursor);
-                editor.setCursor({ line: cursor.line + 1, ch: 0 });
+                editor.setSelection({ line: cursor.line + 1, ch: 0 }, { line: cursor.line + 1, ch: 8 });
             },
         });
         this.addCommand({
             id: 'add-reversed-card',
             name: 'Add a reversed card',
             editorCallback: (editor: Editor) => {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (activeFile) void this.dataManager.ensureDeckTag(activeFile);
                 const blockId = generateBlockId();
                 const template = `\nQuestion:::Answer ^${blockId}`;
                 const cursor = editor.getCursor();
                 editor.replaceRange(template, cursor);
-                editor.setCursor({ line: cursor.line + 1, ch: 0 });
+                editor.setSelection({ line: cursor.line + 1, ch: 0 }, { line: cursor.line + 1, ch: 8 });
             },
         });
         this.addCommand({
             id: 'add-cloze-card',
             name: 'Add a cloze card',
             editorCallback: (editor: Editor) => {
-                const template = `\nThis is ==c1::a cloze deletion== in a sentence.`;
+                const activeFile = this.app.workspace.getActiveFile();
+                if (activeFile) void this.dataManager.ensureDeckTag(activeFile);
+                const template = `\nSentence with ==c1::hidden text==.`;
                 const cursor = editor.getCursor();
                 editor.replaceRange(template, cursor);
-                editor.setCursor({ line: cursor.line + 1, ch: 0 });
+                editor.setSelection({ line: cursor.line + 1, ch: 19 }, { line: cursor.line + 1, ch: 30 });
             },
         });
         this.addCommand({
             id: 'cloze-from-selection',
             name: 'Create cloze from selection',
             editorCallback: (editor: Editor) => {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (activeFile) void this.dataManager.ensureDeckTag(activeFile);
                 const selection = editor.getSelection();
                 if (selection) {
                     const existing = editor.getLine(editor.getCursor().line);
@@ -98,8 +137,7 @@ class FSRSFlashcardsPlugin extends Plugin {
                     const template = `==c1::text==`;
                     editor.replaceSelection(template);
                     const cursor = editor.getCursor();
-                    // Place cursor inside the cloze text
-                    editor.setCursor({ line: cursor.line, ch: cursor.ch - 7 });
+                    editor.setCursor({ line: cursor.line, ch: cursor.ch - 2 });
                 }
             },
         });
@@ -107,22 +145,26 @@ class FSRSFlashcardsPlugin extends Plugin {
             id: 'add-typein-card',
             name: 'Add a type-in card',
             editorCallback: (editor: Editor) => {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (activeFile) void this.dataManager.ensureDeckTag(activeFile);
                 const blockId = generateBlockId();
-                const template = `\n\n---card--- ?type ^${blockId}\nQuestion\n---\nAnswer\n\n`;
+                const template = `\n\n---card--- ?type ^${blockId}\nQuestion: \n---\nAnswer: \n\n`;
                 const cursor = editor.getCursor();
                 editor.replaceRange(template, cursor);
-                editor.setCursor({ line: cursor.line + 3, ch: 0 });
+                editor.setCursor({ line: cursor.line + 3, ch: 10 });
             },
         });
         this.addCommand({
             id: 'add-typein-single-line',
             name: 'Add a type-in single-line card',
             editorCallback: (editor: Editor) => {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (activeFile) void this.dataManager.ensureDeckTag(activeFile);
                 const blockId = generateBlockId();
                 const template = `\nQuestion::Answer ?type ^${blockId}`;
                 const cursor = editor.getCursor();
                 editor.replaceRange(template, cursor);
-                editor.setCursor({ line: cursor.line + 1, ch: 0 });
+                editor.setSelection({ line: cursor.line + 1, ch: 0 }, { line: cursor.line + 1, ch: 8 });
             },
         });
         this.addCommand({
@@ -210,22 +252,39 @@ class FSRSFlashcardsPlugin extends Plugin {
             this.dataManager.recalculateAllDeckStats();
             this.refreshDashboardView();
         }, 500, true);
-        const updateAndRefresh = async (file: TFile) => {
-            try {
-                await this.dataManager.updateFile(file);
-            } catch (e) {
-                console.error('Failed to update file:', e);
+
+        const pendingModifiedFiles = new Set<TFile>();
+        const processPendingFiles = debounce(async () => {
+            if (pendingModifiedFiles.size === 0) return;
+            const filesToProcess = Array.from(pendingModifiedFiles);
+            pendingModifiedFiles.clear();
+
+            let anyDeckUpdated = false;
+            for (const file of filesToProcess) {
+                try {
+                    const changed = await this.dataManager.updateFile(file);
+                    if (changed) anyDeckUpdated = true;
+                } catch (e) {
+                    console.error('Failed to update file:', e);
+                }
             }
-            debouncedRefresh();
-        };
+
+            if (anyDeckUpdated) {
+                this.dataManager.recalculateAllDeckStats();
+                this.refreshDashboardView();
+            }
+        }, 350, true);
+
         this.registerEvent(this.app.vault.on('create', (file) => {
             if (file instanceof TFile) {
-                void updateAndRefresh(file);
+                pendingModifiedFiles.add(file);
+                processPendingFiles();
             }
         }));
         this.registerEvent(this.app.vault.on('modify', (file) => {
             if (file instanceof TFile) {
-                void updateAndRefresh(file);
+                pendingModifiedFiles.add(file);
+                processPendingFiles();
             }
         }));
         this.registerEvent(this.app.vault.on('delete', (file) => {

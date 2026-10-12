@@ -1,8 +1,12 @@
 <div align="center">
 
+<img src="https://raw.githubusercontent.com/Fundaments-Work/Lemma/main/icon.svg" width="96" height="96" alt="Lemma logo" />
+
+<br/><br/>
+
 <img src="https://img.shields.io/badge/Obsidian-Plugin-7C3AED?style=flat-square&logo=obsidian&logoColor=white" alt="Obsidian Plugin">
-<img src="https://img.shields.io/github/v/release/sapienskid/Lemma?style=flat-square&color=7C3AED&label=version" alt="Version">
-<img src="https://img.shields.io/github/license/sapienskid/Lemma?style=flat-square&color=22c55e" alt="License">
+<img src="https://img.shields.io/github/v/release/Fundaments-Work/Lemma?style=flat-square&color=7C3AED&label=version" alt="Version">
+<img src="https://img.shields.io/github/license/Fundaments-Work/Lemma?style=flat-square&color=22c55e" alt="License">
 <img src="https://img.shields.io/badge/algorithm-FSRS%204.5-f59e0b?style=flat-square" alt="FSRS">
 <img src="https://img.shields.io/badge/platform-Desktop%20%7C%20Mobile-3b82f6?style=flat-square" alt="Platform">
 
@@ -15,9 +19,11 @@ No separate app. No manual data export. Write, tag, and study directly where you
 
 <a href="obsidian://show-plugin?id=lemma-flashcards"><img src="https://img.shields.io/badge/Install%20in%20Obsidian-7C3AED?style=for-the-badge&logo=obsidian&logoColor=white" alt="Install in Obsidian"></a>
 &nbsp;
-<a href="https://github.com/sapienskid/Lemma/issues/new?labels=bug"><img src="https://img.shields.io/badge/Report%20Issue-ef4444?style=for-the-badge" alt="Report Bug"></a>
+<a href="https://buymemomo.com/usefundaments"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Momo-C6F135?style=for-the-badge&logoColor=12140F&labelColor=12140F" alt="Buy Me a Momo"></a>
 &nbsp;
-<a href="https://github.com/sapienskid/Lemma/issues/new?labels=enhancement"><img src="https://img.shields.io/badge/Request%20Feature-22c55e?style=for-the-badge" alt="Request Feature"></a>
+<a href="https://github.com/Fundaments-Work/Lemma/issues/new?labels=bug"><img src="https://img.shields.io/badge/Report%20Issue-ef4444?style=for-the-badge" alt="Report Bug"></a>
+&nbsp;
+<a href="https://github.com/Fundaments-Work/Lemma/issues/new?labels=enhancement"><img src="https://img.shields.io/badge/Request%20Feature-22c55e?style=for-the-badge" alt="Request Feature"></a>
 
 </div>
 
@@ -26,13 +32,13 @@ No separate app. No manual data export. Write, tag, and study directly where you
 ## Preview
 
 <p align="center">
-  <img src="screenshots/lemma-dashboard.png" width="49%" alt="Lemma Dashboard — decks with due counts at a glance">
-  <img src="screenshots/lemma-review-modal.png" width="49%" alt="Immersive review mode with FSRS scheduling and LaTeX support">
+  <img src="https://raw.githubusercontent.com/Fundaments-Work/Lemma/main/screenshots/lemma-dashboard.png" width="49%" alt="Lemma Dashboard — decks with due counts at a glance">
+  <img src="https://raw.githubusercontent.com/Fundaments-Work/Lemma/main/screenshots/lemma-review-modal.png" width="49%" alt="Immersive review mode with FSRS scheduling and LaTeX support">
 </p>
 <p align="center">
-  <img src="screenshots/lemma_mobile_dashboard.jpg" width="32%" alt="Mobile dashboard">
-  <img src="screenshots/lemma_mobile_review.jpg" width="32%" alt="Mobile review — full screen, native layout">
-  <img src="screenshots/lemma_mobile_stats.jpg" width="32%" alt="Mobile statistics panel">
+  <img src="https://raw.githubusercontent.com/Fundaments-Work/Lemma/main/screenshots/lemma_mobile_dashboard.jpg" width="32%" alt="Mobile dashboard">
+  <img src="https://raw.githubusercontent.com/Fundaments-Work/Lemma/main/screenshots/lemma_mobile_review.jpg" width="32%" alt="Mobile review — full screen, native layout">
+  <img src="https://raw.githubusercontent.com/Fundaments-Work/Lemma/main/screenshots/lemma_mobile_stats.jpg" width="32%" alt="Mobile statistics panel">
 </p>
 <p align="center"><em>Desktop and mobile · LaTeX math support · Learning analytics · Custom study sessions</em></p>
 
@@ -90,6 +96,15 @@ Analyze learning progress with retention curves, card maturity distribution, int
 ### Mobile Support
 Responsive review interface designed for desktop and mobile, with safe-area insets and touch-optimized navigation.
 
+### In-Place Image Occlusion
+Review anatomy and technical diagrams in place without vertical shifting. Diagram cards automatically detect image pairs, swapping masks in the exact same viewport position with tap/peek toggling.
+
+### Type-In Active Recall
+Type answers directly into the review card with instant character and keyword difference highlighting before revealing FSRS rating buttons.
+
+### Guided Card & Deck Creation
+Interactive creation modals with dropdown format selection, live syntax previews, and automated deck tagging so you never have to memorize card syntax.
+
 ### Optional CouchDB Sync
 Connect to self-hosted CouchDB or Cloudant instances to sync review history seamlessly across devices.
 
@@ -123,43 +138,91 @@ A learning technique that schedules reviews at increasing intervals to maximize 
 
 ## Card Formats
 
-### Basic Cards
+Lemma supports seven card and study formats:
+
+### 1. Basic Multi-Line Cards
+Multi-line format with full Markdown, LaTeX math blocks, and code formatting.
 
 ````markdown
----card--- ^unique-id
-Front content (question)
+---card--- ^basic-001
+What is the function of the ribosome?
 ---
-Back content (answer with **Markdown**, $LaTeX$, and images)
+Protein synthesis via translation of mRNA.
 ````
 
-### Single-Line Cards
+### 2. Single-Line Cards
+Fast atomic flashcards on a single line.
 
 ```markdown
-Question::Answer ^single-001
-Reversed Question:::Reversed Answer ^rev-001
+What is the capital of Japan?::Tokyo ^single-001
 ```
 
-### Cloze Deletion Cards
+### 3. Bidirectional (Reversed) Cards
+Generates a two-way recall card where the prompt and answer are tested in reverse.
 
 ```markdown
-The ==c1::Ebbinghaus== forgetting curve shows memory decays without ==c2::repetition==.
+Mitochondria:::Powerhouse of the cell ^rev-001
+```
+
+### 4. Cloze Deletion Cards
+Hide one or more concepts in context. Multiple cloze IDs (`c1`, `c2`) schedule independent review items.
+
+```markdown
+The ==c1::Ebbinghaus== forgetting curve shows memory decays without ==c2::spaced repetition==. ^cloze-001
+```
+
+### 5. In-Place Image Occlusion Cards
+Swaps occluded diagrams with revealed answers in-place without vertical displacement. Tap the image or press `Space` / `P` to peek back and forth between masks before rating.
+
+```markdown
+![[anatomy-masked.png]]::![[anatomy-revealed.png]] ^occlusion-001
+```
+
+### 6. Type-In Active Recall Cards
+Prompts you to type your answer and provides instant character and keyword comparison before revealing ratings.
+
+```markdown
+?type What is the SI unit of electric current?::Ampere ^typein-001
+```
+
+Or in block format:
+```markdown
+---card--- ?type ^typein-002
+What is the powerhouse of the cell?
+---
+Mitochondria
+```
+
+### 7. Whole-Note Review
+Apply FSRS spaced repetition to entire notes by adding `#review` to the frontmatter or body.
+
+```markdown
+---
+tags: [review]
+---
+# Quantum Mechanics Overview
 ```
 
 > [!TIP]
-> Add a `^block-id` to any card so review history persists across content edits.
+> Add a `^block-id` to cards so review history persists across content edits.
 
 ---
 
-## Keyboard Shortcuts
+## Keyboard Shortcuts & Gestures
 
-| Key | Action |
+| Shortcut / Gesture | Action |
 |---|---|
 | `Space` / `Enter` | Reveal answer |
-| `1` | Again |
+| `Space` / `P` / `F` | Toggle peek between question and answer masks (image cards) |
+| `1` | Again (reset learning steps) |
 | `2` | Hard |
 | `3` | Good |
 | `4` | Easy |
 | `Esc` | Exit session |
+| `Swipe left` | Rate Again |
+| `Swipe down` | Rate Hard |
+| `Swipe right` | Rate Good |
+| `Swipe up` | Rate Easy |
 
 ---
 
@@ -167,11 +230,16 @@ The ==c1::Ebbinghaus== forgetting curve shows memory decays without ==c2::repeti
 
 | Command | Description |
 |---|---|
+| `Create card (guided modal)` | Open guided creator modal with type selector and live preview |
+| `Create new deck` | Create a new note pre-tagged with the deck tag |
+| `Tag current note as flashcard deck` | Add the deck tag to the active note |
 | `Add a new flashcard` | Insert a card template with a pre-generated block ID |
 | `Add a single-line card` | Insert a single-line card template |
 | `Add a reversed card` | Insert a bidirectional card template |
 | `Add a cloze card` | Insert a cloze deletion template |
 | `Create cloze from selection` | Wrap selected text in cloze syntax |
+| `Add a type-in card` | Insert a type-in card template |
+| `Add a type-in single-line card` | Insert a single-line type-in template |
 | `Open dashboard` | Open the Lemma deck overview |
 | `Sync now` | Trigger a manual CouchDB sync |
 | `Check sync status` | View sync connection status |
@@ -202,7 +270,7 @@ The ==c1::Ebbinghaus== forgetting curve shows memory decays without ==c2::repeti
 3. Select **Install**, then **Enable**
 
 ### Manual Installation
-1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/sapienskid/Lemma/releases/latest)
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/Fundaments-Work/Lemma/releases/latest)
 2. Copy the files into:
    ```
    <vault>/.obsidian/plugins/lemma-flashcards/
@@ -211,11 +279,20 @@ The ==c1::Ebbinghaus== forgetting curve shows memory decays without ==c2::repeti
 
 ---
 
+## Support
+
+If you find Lemma helpful for your studies and daily knowledge retention, you can support development:
+
+- [Buy Me a Momo](https://buymemomo.com/usefundaments)
+- Star the repository on [GitHub](https://github.com/Fundaments-Work/Lemma)
+
+---
+
 ## Contributing
 
 Contributions, bug reports, and feature requests are welcome.
 
-- **Issue tracker:** [GitHub issues](https://github.com/sapienskid/Lemma/issues)
+- **Issue tracker:** [GitHub issues](https://github.com/Fundaments-Work/Lemma/issues)
 - **Pull requests:** Open a pull request against `main`
 
 ---

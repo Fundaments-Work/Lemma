@@ -20,6 +20,15 @@
     height: 14px;
 }
 
+svg.lemma-icon path,
+svg.lemma-icon rect {
+    stroke: currentColor;
+    stroke-width: 8px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+
 .lemma-status-label {
     font-size: var(--font-smaller);
     font-weight: 600;
@@ -102,14 +111,12 @@
     justify-content: center;
     width: 24px;
     height: 24px;
-    background-color: var(--interactive-accent);
     border-radius: var(--radius-s);
-    color: var(--text-on-accent);
 }
 
 .fsrs-logo-icon svg {
-    width: 14px;
-    height: 14px;
+    width: 24px;
+    height: 24px;
 }
 
 .fsrs-title {
@@ -597,6 +604,50 @@
 .fsrs-review-card .image-embed img {
     max-width: 100%;
     border-radius: var(--radius-s);
+}
+
+.fsrs-card-inplace .fsrs-card-answer {
+    margin-top: 0;
+}
+
+.fsrs-card-inplace .fsrs-card-answer hr {
+    display: none;
+}
+
+.fsrs-card-inplace .fsrs-card-front,
+.fsrs-card-inplace .fsrs-card-back {
+    min-height: unset;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.fsrs-card-inplace .image-embed,
+.fsrs-card-inplace .media-embed,
+.fsrs-card-inplace p {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.fsrs-card-inplace img {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    max-height: 70vh;
+    object-fit: contain;
+}
+
+.fsrs-inplace-indicator {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: var(--size-4-2);
+    user-select: none;
+    cursor: pointer;
 }
 
 /* ── Browse modal ── */
@@ -1203,6 +1254,10 @@
         min-height: 60px;
     }
 
+    .fsrs-card-inplace img {
+        max-height: 45vh;
+    }
+
     .fsrs-bottom-controls {
         padding-top: var(--size-4-1);
     }
@@ -1284,70 +1339,41 @@
     margin-top: 20px;
 }
 
-/* ── Quick reference (inline in About tab) ── */
+/* ── Cheatsheet (About tab) ── */
 
-.lemma-quick-reference {
-    margin-top: var(--size-4-4);
-    padding-top: var(--size-4-4);
-    border-top: 1px solid var(--background-modifier-border);
-}
-
-.lemma-quick-reference-title {
-    font-size: var(--font-ui-small);
-    font-weight: 600;
-    color: var(--text-normal);
-    margin: 0 0 var(--size-4-3) 0;
-}
-
-.lemma-ref-section {
-    margin-bottom: var(--size-4-3);
-    padding: var(--size-4-2) var(--size-4-3);
+.lemma-about-cheatsheet {
+    margin-bottom: var(--size-4-4);
+    padding: var(--size-4-4);
     background-color: var(--background-secondary);
     border-radius: var(--radius-m);
+    border: 1px solid var(--background-modifier-border);
 }
 
-.lemma-ref-section h4 {
-    font-size: var(--font-ui-small);
-    font-weight: 600;
-    color: var(--text-normal);
-    margin: 0 0 var(--size-4-1) 0;
-}
-
-.lemma-ref-section p {
-    font-size: var(--font-smaller);
-    color: var(--text-muted);
-    margin: var(--size-4-1) 0;
-    line-height: var(--line-height-tight);
-}
-
-.lemma-ref-section ul {
-    margin: var(--size-4-1) 0;
-    padding-left: var(--size-4-4);
-}
-
-.lemma-ref-section li {
-    font-size: var(--font-smaller);
-    color: var(--text-muted);
-    margin-bottom: var(--size-4-1);
-}
-
-.lemma-ref-grid {
+.lemma-about-grid {
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: var(--size-4-1) var(--size-4-3);
-    font-size: var(--font-smaller);
-    margin-top: var(--size-4-1);
+    grid-template-columns: minmax(130px, auto) 1fr;
+    gap: var(--size-4-2) var(--size-4-4);
+    align-items: center;
+    font-size: var(--font-ui-small);
 }
 
-.lemma-ref-key {
+.lemma-about-key {
     display: inline-block;
-    padding: 1px 6px;
+    padding: var(--size-2-1) var(--size-4-2);
     background-color: var(--background-modifier-form-field);
     border: 1px solid var(--background-modifier-border);
     border-radius: var(--radius-s);
     font-family: var(--font-monospace);
     font-size: var(--font-smallest);
     color: var(--text-normal);
+    white-space: pre-wrap;
+    line-height: var(--line-height-normal);
+}
+
+.lemma-about-val {
+    color: var(--text-muted);
+    font-size: var(--font-ui-small);
+    line-height: var(--line-height-normal);
 }
 
 /* ── Gamification ── */
@@ -1627,5 +1653,70 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* ── Guided Card & Deck Creation ── */
+
+.fsrs-empty-actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--size-4-2);
+    margin: var(--size-4-3) 0;
+    flex-wrap: wrap;
+}
+
+.fsrs-create-card-modal {
+    width: min(90vw, 560px);
+}
+
+.fsrs-create-card-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-4-2);
+}
+
+.fsrs-card-inputs-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-4-2);
+}
+
+.fsrs-modal-textarea {
+    width: 100%;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.fsrs-modal-input-wide {
+    width: 100%;
+}
+
+.fsrs-card-preview-container {
+    margin-top: var(--size-4-2);
+    padding: var(--size-4-2) var(--size-4-3);
+    background-color: var(--background-secondary);
+    border-radius: var(--radius-m);
+    border: 1px solid var(--background-modifier-border);
+}
+
+.fsrs-preview-heading {
+    font-size: var(--font-smallest);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--size-4-1);
+}
+
+.fsrs-card-preview-code {
+    margin: 0;
+    padding: var(--size-4-1) 0;
+    font-family: var(--font-monospace);
+    font-size: var(--font-smaller);
+    color: var(--text-normal);
+    background: transparent;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 
 

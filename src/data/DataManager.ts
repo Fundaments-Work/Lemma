@@ -1,7 +1,7 @@
 import { FSRS, Rating, State, createEmptyCard, type Card as FSRSCard } from 'ts-fsrs';
-import { Notice, TFile } from 'obsidian';
+import { Notice, TFile, type CachedMetadata } from 'obsidian';
 import type { Card, Deck, FSRSData, FSRSParameters, Gamification, NoteReviewData, PluginData, ReviewLog } from './types';
-import { isRecord, toStringArray, cyrb53hex, getDocsWritten, getErrorMessage, isLikelyCorsOrNetworkErrorMessage, buildAuthenticatedUrl } from './constants';
+import { isRecord, cyrb53hex, getDocsWritten, getErrorMessage, isLikelyCorsOrNetworkErrorMessage, buildAuthenticatedUrl } from './constants';
 import { PouchDBManager } from '../database/PouchDBManager';
 
 type FSRSFlashcardsPlugin = import('../plugin/main').FSRSFlashcardsPlugin;
@@ -17,6 +17,7 @@ export class DataManager {
     private pouchDB: PouchDBManager | null = null;
     private migrationCompleted: boolean = false;
     private isLoaded: boolean = false;
+    private fileMtimes: Map<string, number> = new Map();
 
     constructor(plugin: FSRSFlashcardsPlugin) {
         this.plugin = plugin;
@@ -157,6 +158,7 @@ export class DataManager {
         this.decks.clear();
         this.cards.clear();
         this.noteReviews.clear();
+        this.fileMtimes.clear();
         for (const file of this.plugin.app.vault.getMarkdownFiles()) {
             await this.updateFile(file);
         }
@@ -168,12 +170,51 @@ export class DataManager {
         return cyrb53hex(path);
     }
 
-    private getHeadingContext(content: string, cardIndex: number): string | undefined {
-        const lines = content.split('\n');
-        const headingStack: string[] = [];
-        let foundContext: string | undefined;
+    private hasTag(cache: CachedMetadata | null | undefined, tagWithHash: string): boolean {
+        if (!cache) return false;
+        const normalized = tagWithHash.toLowerCase();
+        const bareTag = normalized.startsWith('#') ? normalized.slice(1) : normalized;
+        const hashTag = '#' + bareTag;
 
-        for (let i = 0; i < Math.min(cardIndex, lines.length); i++) {
+        const frontmatter = isRecord(cache.frontmatter) ? cache.frontmatter : null;
+        if (frontmatter) {
+            const fmTags = frontmatter.tags ?? frontmatter.tag;
+            if (typeof fmTags === 'string') {
+                const trimmed = fmTags.toLowerCase().trim();
+                if (trimmed === bareTag || trimmed === hashTag) return true;
+                if (trimmed.includes(',')) {
+                    const parts = trimmed.split(',');
+                    for (let i = 0; i < parts.length; i++) {
+                        const p = parts[i].trim();
+                        if (p === bareTag || p === hashTag) return true;
+                    }
+                }
+            } else if (Array.isArray(fmTags)) {
+                for (let i = 0; i < fmTags.length; i++) {
+                    const item: unknown = fmTags[i];
+                    if (typeof item === 'string') {
+                        const trimmed = item.toLowerCase().trim();
+                        if (trimmed === bareTag || trimmed === hashTag) return true;
+                    }
+                }
+            }
+        }
+
+        if (cache.tags) {
+            for (let i = 0; i < cache.tags.length; i++) {
+                const t = cache.tags[i].tag.toLowerCase();
+                if (t === hashTag || t === bareTag) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private buildHeadingBreadcrumbs(lines: string[]): (string | undefined)[] {
+        const breadcrumbs = new Array<string | undefined>(lines.length);
+        const headingStack: string[] = [];
+
+        for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
             if (headingMatch) {
@@ -184,62 +225,123 @@ export class DataManager {
                 }
                 headingStack.push(text);
             }
+            breadcrumbs[i] = headingStack.length > 0 ? headingStack.join(' > ') : undefined;
         }
 
-        if (headingStack.length > 0) {
-            foundContext = headingStack.join(' > ');
-        }
-
-        return foundContext;
+        return breadcrumbs;
     }
 
-    async updateFile(file: TFile) {
+    private findCardContext(content: string, breadcrumbs: (string | undefined)[], searchText: string): string | undefined {
+        const idx = content.indexOf(searchText);
+        if (idx < 0) return undefined;
+        let lineNum = 0;
+        for (let i = 0; i < idx; i++) {
+            if (content.charCodeAt(i) === 10) {
+                lineNum++;
+            }
+        }
+        return lineNum < breadcrumbs.length ? breadcrumbs[lineNum] : undefined;
+    }
+
+    async updateFile(file: TFile): Promise<boolean> {
         const deckId = this.getDeckId(file.path);
         const cache = this.plugin.app.metadataCache.getFileCache(file);
         const deckTag = `#${this.plugin.settings.deckTag}`;
         const reviewTag = '#review';
-        const frontmatter = isRecord(cache?.frontmatter) ? cache.frontmatter : null;
-        const frontmatterTags = frontmatter ? toStringArray(frontmatter.tags) : [];
-        const allTags = (cache?.tags ?? []).map(t => t.tag.toLowerCase());
-        const allFrontmatterTags = frontmatterTags.map(t => `#${t.toLowerCase()}`);
 
-        // Check for deck tag
-        const isDeck = allTags.includes(deckTag) || allFrontmatterTags.includes(deckTag);
-        this.removeDeck(deckId, false);
+        const isDeck = this.hasTag(cache, deckTag);
+        const isReview = this.hasTag(cache, reviewTag);
+
+        const hadDeck = this.decks.has(deckId);
+        const hadReview = this.noteReviews.has(file.path);
+
+        if (!isDeck && !isReview) {
+            if (!hadDeck && !hadReview) {
+                return false;
+            }
+            if (hadDeck) this.removeDeck(deckId, false);
+            if (hadReview) this.noteReviews.delete(file.path);
+            this.fileMtimes.delete(file.path);
+            return true;
+        }
+
+        const currentMtime = file.stat?.mtime ?? 0;
+        const previousMtime = this.fileMtimes.get(file.path);
+        if (currentMtime > 0 && previousMtime === currentMtime && (hadDeck === isDeck) && (hadReview === isReview)) {
+            return false;
+        }
+
+        let stateChanged = false;
+
         if (isDeck) {
+            this.removeDeck(deckId, false);
+            const frontmatter = isRecord(cache?.frontmatter) ? cache.frontmatter : null;
             const title = frontmatter && typeof frontmatter.title === 'string' ? frontmatter.title : file.basename;
             const newDeck: Deck = { id: deckId, title, filePath: file.path, cardIds: new Set(), stats: { new: 0, due: 0, learning: 0 } };
             const content = await this.plugin.app.vault.read(file);
             const lines = content.split('\n');
+            const breadcrumbs = this.buildHeadingBreadcrumbs(lines);
 
-            this.parseBasicCards(content, lines, file.path, deckId, newDeck);
-            this.parseSingleLineCards(content, lines, file.path, deckId, newDeck);
-            this.parseClozeCards(content, lines, file.path, deckId, newDeck);
+            this.parseBasicCards(content, breadcrumbs, file.path, deckId, newDeck);
+            this.parseSingleLineCards(lines, breadcrumbs, file.path, deckId, newDeck);
+            this.parseClozeCards(content, breadcrumbs, file.path, deckId, newDeck);
 
             if (newDeck.cardIds.size > 0) this.decks.set(deckId, newDeck);
+            stateChanged = true;
+        } else if (hadDeck) {
+            this.removeDeck(deckId, false);
+            stateChanged = true;
         }
 
-        // Check for note review tag
-        const isReviewNote = allTags.includes(reviewTag) || allFrontmatterTags.includes(reviewTag);
-        if (isReviewNote) {
+        if (isReview) {
             const existing = this.noteReviews.get(file.path);
             this.noteReviews.set(file.path, {
                 filePath: file.path,
                 fsrsData: existing?.fsrsData || this.fsrsDataStore[`note::${file.path}`],
             });
-        } else {
+            if (!hadReview) stateChanged = true;
+        } else if (hadReview) {
             this.noteReviews.delete(file.path);
+            stateChanged = true;
         }
+
+        if (currentMtime > 0) {
+            this.fileMtimes.set(file.path, currentMtime);
+        } else {
+            this.fileMtimes.delete(file.path);
+        }
+
+        return stateChanged;
     }
 
-    private findCardContext(content: string, lines: string[], searchText: string): string | undefined {
-        const idx = content.indexOf(searchText);
-        if (idx < 0) return undefined;
-        const lineNum = content.substring(0, idx).split('\n').length - 1;
-        return this.getHeadingContext(content, lineNum);
+    public isFileDeck(file: TFile): boolean {
+        const cache = this.plugin.app.metadataCache.getFileCache(file);
+        return this.hasTag(cache, `#${this.plugin.settings.deckTag}`);
     }
 
-    private parseSingleLineCards(content: string, lines: string[], filePath: string, deckId: string, newDeck: Deck) {
+    public async ensureDeckTag(file: TFile): Promise<boolean> {
+        if (this.isFileDeck(file)) return false;
+
+        const deckTagName = this.plugin.settings.deckTag.replace(/^#/, '');
+        if (this.plugin.app.fileManager?.processFrontMatter) {
+            await this.plugin.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
+                const currentTags = fm.tags;
+                if (Array.isArray(currentTags)) {
+                    if (!currentTags.includes(deckTagName)) {
+                        currentTags.push(deckTagName);
+                    }
+                } else if (typeof currentTags === 'string') {
+                    fm.tags = [currentTags, deckTagName];
+                } else {
+                    fm.tags = [deckTagName];
+                }
+            });
+        }
+        new Notice(`Tagged note as #${deckTagName} deck`);
+        return true;
+    }
+
+    private parseSingleLineCards(lines: string[], breadcrumbs: (string | undefined)[], filePath: string, deckId: string, newDeck: Deck) {
         for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
             const line = lines[lineIdx];
             const trimmed = line.trim();
@@ -279,7 +381,7 @@ export class DataManager {
                     originalText: trimmed,
                     front: back,
                     back: front,
-                    context: this.getHeadingContext(content, lineIdx),
+                    context: breadcrumbs[lineIdx],
                     fsrsData: this.fsrsDataStore[cardId],
                 };
                 this.cards.set(cardId, card);
@@ -306,7 +408,7 @@ export class DataManager {
                     originalText: trimmed,
                     front,
                     back,
-                    context: this.getHeadingContext(content, lineIdx),
+                    context: breadcrumbs[lineIdx],
                     fsrsData: this.fsrsDataStore[cardId],
                 };
                 this.cards.set(cardId, card);
@@ -314,7 +416,8 @@ export class DataManager {
             }
         }
     }
-    private parseBasicCards(content: string, lines: string[], filePath: string, deckId: string, newDeck: Deck) {
+
+    private parseBasicCards(content: string, breadcrumbs: (string | undefined)[], filePath: string, deckId: string, newDeck: Deck) {
         const basicCardsRaw = content.split(/---\s*card\s*---/i).slice(1);
         for (const cardRaw of basicCardsRaw) {
             const parts = cardRaw.split(/\n---\n/);
@@ -340,7 +443,7 @@ export class DataManager {
             const back = backPart.trim();
             if (!front || !back) continue;
 
-            const context = this.findCardContext(content, lines, cardRaw);
+            const context = this.findCardContext(content, breadcrumbs, cardRaw);
 
             const card: Card = {
                 id: cardId,
@@ -358,7 +461,7 @@ export class DataManager {
         }
     }
 
-    private parseClozeCards(content: string, lines: string[], filePath: string, deckId: string, newDeck: Deck) {
+    private parseClozeCards(content: string, breadcrumbs: (string | undefined)[], filePath: string, deckId: string, newDeck: Deck) {
         const paragraphs = content.split(/\n\s*\n/);
 
         for (const paragraph of paragraphs) {
@@ -369,7 +472,7 @@ export class DataManager {
 
             const blockIdMatch = paragraph.match(/\^([a-zA-Z0-9-]+)\s*$/);
 
-            const context = this.findCardContext(content, lines, paragraph);
+            const context = this.findCardContext(content, breadcrumbs, paragraph);
 
             clozes.forEach(cloze => {
                 const clozeNum = cloze[1];
@@ -405,6 +508,7 @@ export class DataManager {
     removeDeck(deckId: string, fullDelete: boolean = true) {
         const deck = this.decks.get(deckId);
         if (deck) {
+            this.fileMtimes.delete(deck.filePath);
             deck.cardIds.forEach(cardId => {
                 this.cards.delete(cardId);
                 delete this.fsrsDataStore[cardId];
@@ -417,6 +521,7 @@ export class DataManager {
     async renameDeck(file: TFile, oldPath: string) {
         const oldDeckId = this.getDeckId(oldPath);
         this.removeDeck(oldDeckId, false);
+        this.fileMtimes.delete(oldPath);
         await this.updateFile(file);
         await this.save();
     }

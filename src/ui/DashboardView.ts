@@ -6,6 +6,8 @@ import { StatsModal } from './StatsModal';
 import { CustomStudyModal } from './CustomStudyModal';
 import { HelpModal } from './HelpModal';
 import { BrowseModal } from './BrowseModal';
+import { CreateCardModal } from './CreateCardModal';
+import { CreateDeckModal } from './CreateDeckModal';
 
 type FSRSFlashcardsPlugin = import('../plugin/main').FSRSFlashcardsPlugin;
 
@@ -49,7 +51,7 @@ export class DashboardView extends ItemView {
 
         const titleSection = headerTop.createDiv({ cls: 'fsrs-title-section' });
         const logoIcon = titleSection.createDiv({ cls: 'fsrs-logo-icon' });
-        setIcon(logoIcon, 'brain-circuit');
+        setIcon(logoIcon, VIEW_ICON_NAME);
         titleSection.createEl('h2', { text: 'Lemma', cls: 'fsrs-title' });
 
         const actionsRow = headerEl.createDiv({ cls: 'fsrs-quick-actions' });
@@ -78,8 +80,9 @@ export class DashboardView extends ItemView {
             studyAllBtn.buttonEl.createSpan({ text: dueCount.toString(), cls: 'fsrs-action-badge' });
         }
 
+        createDashBtn('folder-plus', 'New deck', () => new CreateDeckModal(this.app, this.plugin).open());
+        createDashBtn('plus', 'New card', () => new CreateCardModal(this.app, this.plugin).open());
         createDashBtn('bar-chart-2', 'Statistics', () => new StatsModal(this.app, this.plugin).open());
-
         createDashBtn('filter', 'Custom study', () => new CustomStudyModal(this.app, this.plugin).open());
 
         const iconRow = actionsRow.createDiv({ cls: 'fsrs-icon-row' });
@@ -346,13 +349,25 @@ export class DashboardView extends ItemView {
         emptyStateEl.createEl('h3', { text: 'Ready to learn?', cls: 'fsrs-empty-title' });
 
         emptyStateEl.createEl('p', {
-            text: `Create flashcards by adding the tag #${this.plugin.settings.deckTag} to any note.`,
+            text: `Create flashcards by adding the tag #${this.plugin.settings.deckTag} to any note, or start directly below.`,
             cls: 'fsrs-empty-desc',
         });
+
+        const emptyActions = emptyStateEl.createDiv({ cls: 'fsrs-empty-actions' });
+        new ButtonComponent(emptyActions)
+            .setIcon('folder-plus')
+            .setButtonText('Create new deck')
+            .setCta()
+            .onClick(() => new CreateDeckModal(this.app, this.plugin).open());
+
+        new ButtonComponent(emptyActions)
+            .setIcon('plus')
+            .setButtonText('Create flashcard')
+            .onClick(() => new CreateCardModal(this.app, this.plugin).open());
 
         const tipEl = emptyStateEl.createDiv({ cls: 'fsrs-empty-tip' });
         const tipIcon = tipEl.createDiv({ cls: 'fsrs-tip-icon' });
         setIcon(tipIcon, 'lightbulb');
-        tipEl.createSpan({ text: 'Pro tip: Use ---card--- to create flashcard blocks' });
+        tipEl.createSpan({ text: 'Pro tip: Use ---card--- or Q::A in any tagged note to add cards instantly.' });
     }
 }

@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.3] - 2026-10-12
+
+### Added
+- **In-Place Image Occlusion Viewer:** Diagram cards where both front and back are images (e.g. Excalidraw, anatomy masks) automatically render in the exact same viewport position with interactive tap/peek toggling (`Space` / `P` / `F`), eliminating vertical displacement and mobile scrolling (closes #1).
+- **Type-In Active Recall Cards:** Support for active recall testing via `?type` flag in single-line (`Q::A ?type`) and block format (`---card--- ?type`), featuring real-time diff feedback and full FSRS rating buttons.
+- **Guided Creation Modals:** Added `CreateCardModal` (dropdown selector for card types with live syntax preview) and `CreateDeckModal` (interactive deck creator with automated `#flashcards` tagging).
+- **High-Performance Vault Indexing:**
+  - Debounced vault modify/create events (350ms batching into `Set<TFile>`) to eliminate keystroke lag while typing notes.
+  - Zero-allocation tag cache checks (`hasTag`) eliminating thousands of intermediate array allocations.
+  - File modification time caching (`fileMtimes`) skipping unchanged files and avoiding unnecessary disk I/O.
+  - Single-pass $O(N)$ pre-computed heading breadcrumbs replacing repetitive $O(N^2)$ string splitting during card parsing.
+- **Standard Native Obsidian Vector Icon:** Replaced custom scaled raster-like shapes with a standard Lucide-compatible 100×100 vector icon (8px stroke, clean stacked flashcards with centered "L" monogram) that seamlessly inherits Obsidian theme colors across ribbon, status bar, and dashboard without blur.
+- **Polished Settings UI:** Redesigned About tab with clean spacing, interactive user guide button, and quick reference cheatsheets.
+- **Organization & Sponsorship Migration:** Migrated repository links to `Fundaments-Work/Lemma` and integrated Buy Me a Momo sponsorship.
+
 ## [1.1.2] - 2026-08-30
 
 ### Added

@@ -1,9 +1,11 @@
 import { generatorParameters } from 'ts-fsrs';
-import type { FSRSSettings } from './types';
+import type { FSRSSettings, Card } from './types';
 
 export const VIEW_TYPE_DASHBOARD = 'fsrs-dashboard-view';
-export const VIEW_ICON_NAME = 'book-open';
-export const STATUS_ICON_NAME = 'brain-circuit';
+export const LEMMA_ICON_ID = 'lemma-icon';
+export const LEMMA_ICON_SVG = '<g fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M 38 12 H 76 A 8 8 0 0 1 84 20 V 66"/><path d="M 26 22 H 64 A 8 8 0 0 1 72 30 V 76"/><rect x="14" y="32" width="50" height="58" rx="8"/><path d="M 29 46 V 74 H 49"/></g>';
+export const VIEW_ICON_NAME = LEMMA_ICON_ID;
+export const STATUS_ICON_NAME = LEMMA_ICON_ID;
 
 export const DEFAULT_SETTINGS: FSRSSettings = {
     deckTag: 'flashcards',
@@ -128,3 +130,37 @@ export function cyrb53hex(str: string, seed = 0): string {
     const hash = 4294967296 * (2097151 & h2) + (h1 >>> 0);
     return hash.toString(16).padStart(16, '0');
 }
+
+const IMAGE_EXTENSIONS = new Set([
+    'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'avif', 'tiff', 'excalidraw',
+]);
+
+export function isImageOnlyContent(content: string): boolean {
+    if (!content || typeof content !== 'string') return false;
+
+    const clean = content.replace(/\s*\^[a-zA-Z0-9-]+\s*$/, '').trim();
+    if (!clean) return false;
+
+    const wikiMatch = clean.match(/^!\[\[([^\]\r\n]+)\]\]$/);
+    if (wikiMatch) {
+        const rawTarget = wikiMatch[1].split('|')[0].trim().toLowerCase();
+        if (rawTarget.endsWith('.excalidraw.md') || rawTarget.endsWith('.excalidraw')) {
+            return true;
+        }
+        const ext = rawTarget.split('.').pop();
+        return ext ? IMAGE_EXTENSIONS.has(ext) : false;
+    }
+
+    const mdMatch = clean.match(/^!\[([^\]\r\n]*)\]\(([^)\r\n]+)\)$/);
+    if (mdMatch) {
+        return true;
+    }
+
+    return false;
+}
+
+export function isInPlaceImageCard(card: Card | null | undefined): boolean {
+    if (!card) return false;
+    return isImageOnlyContent(card.front) && isImageOnlyContent(card.back);
+}
+

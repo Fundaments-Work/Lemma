@@ -327,58 +327,68 @@ export class FSRSSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Lemma')
-            .setDesc(`v${this.plugin.manifest.version} by Sapienskid — FSRS-based spaced repetition flashcards.`);
+            .setDesc(`v${this.plugin.manifest.version} by Fundaments Work — FSRS spaced repetition flashcards for Obsidian.`);
 
-        const reference = containerEl.createDiv({ cls: 'lemma-quick-reference' });
-        reference.createEl('p', { text: 'Quick reference', cls: 'lemma-quick-reference-title' });
+        new Setting(containerEl)
+            .setName('Support development')
+            .setDesc('Support continuous development and upcoming features.')
+            .addButton((btn) => btn
+                .setButtonText('Buy me a momo')
+                .setCta()
+                .onClick(() => {
+                    window.open('https://buymemomo.com/usefundaments', '_blank');
+                }));
 
-        this.renderRefSection(reference, 'Creating decks', [
-            `Add the tag #${this.plugin.settings.deckTag} to any note to make it a deck.`,
-            `Use frontmatter: tags: [${this.plugin.settings.deckTag}]`,
-            `Or inline: # My Note #${this.plugin.settings.deckTag}`,
-        ], []);
+        new Setting(containerEl)
+            .setName('Documentation and guide')
+            .setDesc('Open the interactive flashcard authoring guide and tips.')
+            .addButton((btn) => btn
+                .setButtonText('Open guide')
+                .onClick(async () => {
+                    const { HelpModal } = await import('./HelpModal');
+                    new HelpModal(this.app, this.plugin).open();
+                }));
 
-        this.renderRefSection(reference, 'Card formats', [
-            'Basic: ---card--- ^id / Front / --- / Back',
-            'Cloze: ==c1::hidden text==',
-            'Use block IDs (^unique-id) to preserve review history when editing.',
-        ], []);
+        new Setting(containerEl)
+            .setName('GitHub repository')
+            .setDesc('View source code, report issues, and follow releases on GitHub.')
+            .addButton((btn) => btn
+                .setButtonText('Open repository')
+                .onClick(() => {
+                    window.open('https://github.com/Fundaments-Work/Lemma', '_blank');
+                }));
 
-        this.renderRefSection(reference, 'Review hotkeys', [], [
-            ['Space / Enter', 'Show answer'],
-            ['1', 'Again'],
-            ['2', 'Hard'],
-            ['3', 'Good'],
-            ['4', 'Easy'],
-            ['Esc', 'Exit review session'],
-        ]);
+        new Setting(containerEl).setName('Quick card cheatsheet').setHeading();
 
-        this.renderRefSection(reference, 'Tips', [
-            'Use Custom Study to filter by tags or card state.',
-            'Enable PouchDB for better performance with large collections.',
-            'Use Sync to keep your data across devices via CouchDB.',
-        ], []);
-    }
-
-    private renderRefSection(container: HTMLElement, title: string, paragraphs: string[], items: string[][] | string[]) {
-        const section = container.createDiv({ cls: 'lemma-ref-section' });
-        new Setting(section).setName(title).setHeading();
-        for (const p of paragraphs) {
-            section.createEl('p', { text: p });
+        const cardBox = containerEl.createDiv({ cls: 'lemma-about-cheatsheet' });
+        const cardGrid = cardBox.createDiv({ cls: 'lemma-about-grid' });
+        const cardFormats: [string, string][] = [
+            ['Basic block', '---card--- ^id \n Question \n --- \n Answer'],
+            ['Single-line', 'Question::Answer ^id'],
+            ['Reversed', 'Question:::Answer ^id (bidirectional)'],
+            ['Cloze deletion', 'Sentence with ==c1::hidden text=='],
+            ['Image occlusion', '![[mask.png]]::![[reveal.png]] (in-place)'],
+            ['Type-in answer', '?type Question::Answer'],
+            ['Whole-note', 'Tag note with #review for full-page study'],
+        ];
+        for (const [key, desc] of cardFormats) {
+            cardGrid.createSpan({ cls: 'lemma-about-key', text: key });
+            cardGrid.createSpan({ cls: 'lemma-about-val', text: desc });
         }
-        if (items.length > 0) {
-            if (Array.isArray(items[0])) {
-                const grid = section.createDiv({ cls: 'lemma-ref-grid' });
-                for (const [key, desc] of items as string[][]) {
-                    grid.createSpan({ cls: 'lemma-ref-key', text: key });
-                    grid.createSpan({ text: desc });
-                }
-            } else {
-                const ul = section.createEl('ul');
-                for (const item of items as string[]) {
-                    ul.createEl('li', { text: item });
-                }
-            }
+
+        new Setting(containerEl).setName('Review shortcuts').setHeading();
+
+        const shortcutBox = containerEl.createDiv({ cls: 'lemma-about-cheatsheet' });
+        const shortcutGrid = shortcutBox.createDiv({ cls: 'lemma-about-grid' });
+        const shortcuts: [string, string][] = [
+            ['Space / Enter', 'Reveal answer or toggle peek'],
+            ['1 / 2 / 3 / 4', 'Rate card: Again (1), Hard (2), Good (3), Easy (4)'],
+            ['Esc', 'Close session and save progress'],
+            ['Swipe gestures', 'Left: Again · Down: Hard · Right: Good · Up: Easy'],
+        ];
+        for (const [key, desc] of shortcuts) {
+            shortcutGrid.createSpan({ cls: 'lemma-about-key', text: key });
+            shortcutGrid.createSpan({ cls: 'lemma-about-val', text: desc });
         }
     }
 

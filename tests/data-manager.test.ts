@@ -222,4 +222,58 @@ Back 2
             expect(dm.getAllCards()).toHaveLength(2);
         });
     });
+
+    describe('isFileDeck and ensureDeckTag', () => {
+        it('detects when a file has deck tag in tags cache', () => {
+            const plugin = createMockPlugin();
+            const dm = new DataManager(plugin as never);
+            plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+                tags: [{ tag: '#flashcards' }],
+            });
+            const file = { path: 'notes/test.md', basename: 'test' };
+            expect(dm.isFileDeck(file as never)).toBe(true);
+        });
+
+        it('detects when a file has deck tag in frontmatter tags', () => {
+            const plugin = createMockPlugin();
+            const dm = new DataManager(plugin as never);
+            plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+                frontmatter: { tags: ['flashcards', 'study'] },
+            });
+            const file = { path: 'notes/test.md', basename: 'test' };
+            expect(dm.isFileDeck(file as never)).toBe(true);
+        });
+
+        it('returns false when a file has no deck tag', () => {
+            const plugin = createMockPlugin();
+            const dm = new DataManager(plugin as never);
+            plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+                tags: [{ tag: '#other' }],
+                frontmatter: { tags: ['reading'] },
+            });
+            const file = { path: 'notes/test.md', basename: 'test' };
+            expect(dm.isFileDeck(file as never)).toBe(false);
+        });
+
+        it('calls processFrontMatter when ensureDeckTag is invoked on un-tagged file', async () => {
+            const plugin = createMockPlugin();
+            const processMock = vi.fn().mockImplementation((_file, fn) => {
+                const fm: Record<string, unknown> = {};
+                fn(fm);
+                expect(fm.tags).toContain('flashcards');
+                return Promise.resolve();
+            });
+            (plugin.app as unknown as { fileManager: { processFrontMatter: unknown } }).fileManager = {
+                processFrontMatter: processMock,
+            };
+            const dm = new DataManager(plugin as never);
+            plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({ tags: [] });
+
+            const file = { path: 'notes/test.md', basename: 'test' };
+            const tagged = await dm.ensureDeckTag(file as never);
+            expect(tagged).toBe(true);
+            expect(processMock).toHaveBeenCalled();
+        });
+    });
 });
+

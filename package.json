@@ -1,6 +1,6 @@
 {
   "name": "lemma-flashcards",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Create and review flashcards with spaced repetition using the FSRS algorithm. Supports cloze deletions, custom study sessions, statistics, and CouchDB sync.",
   "main": "main.js",
   "scripts": {
@@ -29,16 +29,16 @@
     "srs",
     "learning"
   ],
-  "author": "Sapienskid",
+  "author": "Fundaments Work",
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sapienskid/Lemma.git"
+    "url": "https://github.com/Fundaments-Work/Lemma.git"
   },
   "bugs": {
-    "url": "https://github.com/sapienskid/Lemma/issues"
+    "url": "https://github.com/Fundaments-Work/Lemma/issues"
   },
-  "homepage": "https://github.com/sapienskid/Lemma#readme",
+  "homepage": "https://github.com/Fundaments-Work/Lemma#readme",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@microsoft/eslint-plugin-sdl": "^1.1.0",
