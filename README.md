@@ -12,7 +12,7 @@
 
 <br/><br/>
 
-<h1>Lemma — Flashcards for Obsidian</h1>
+<h1>Lemma</h1>
 
 <p><strong>A modern, FSRS-powered spaced repetition plugin that lives inside your notes.</strong><br>
 No separate app. No manual data export. Write, tag, and study directly where your knowledge lives.</p>
