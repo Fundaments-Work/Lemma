@@ -18,6 +18,26 @@ node deploy.mjs <vault-path>   # copy built files to vault
 - **Repository**: [Fundaments-Work/Lemma](https://github.com/Fundaments-Work/Lemma)
 - **Sponsorship**: [Buy Me a Momo](https://buymemomo.com/usefundaments)
 
+## Licensing
+
+- **License**: ISC (also known as OBSD / OpenBSD). Do not describe it as MIT
+- **Copyright holder**: Fundaments Work, year range `2025-2026`. Never use the legacy
+  `Sapienskid` handle in shipped files
+- **Single source of truth**: `LICENSE` file. Attribution also appears in `manifest.json`,
+  `package.json` (`license: ISC`), the README badge and License section, and the settings
+  About tab. Change all of them together
+- **Bundled dependencies**: all runtime deps are permissively licensed. Update the version
+  table in `THIRD_PARTY_NOTICES.md` whenever a runtime dependency is added or upgraded
+- **No per-file license headers**, and no CLA for contributions
+
+## Design plans
+
+- `docs/plans/` holds plans for work that is **in progress**; `docs/plans/done/` holds
+  completed ones. Move the file with `git mv` when a feature ships so history is kept
+- Update the plan to match what actually shipped when moving it, and set
+  `**Status**: Done` with the completion date and shipped version
+- Plan documents link issues under the `Fundaments-Work` org, never the legacy handle
+
 ## Code conventions
 
 - **Sentence case** for all UI labels: "API configuration", not "API Configuration"

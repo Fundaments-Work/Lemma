@@ -63,3 +63,21 @@ Before submitting a pull request:
 2. Commit changes with clear, concise messages.
 3. Push to your fork and open a pull request against `main`.
 4. Provide a clear description of the changes, motivation, and any testing performed.
+
+## Licensing
+
+Lemma is licensed under the **ISC License** (the OpenBSD / OBSD license). Full text is in
+[LICENSE](LICENSE).
+
+- **Your contributions are licensed the same way.** By opening a pull request, you agree your
+  contribution is provided under the ISC License, with copyright held by Fundaments Work.
+- **No separate CLA required.** There is no individual contributor licensing agreement to sign.
+- **Keep dependency notices current.** If your change adds or upgrades a bundled runtime
+  dependency, update the version table in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+  All current dependencies are permissively licensed and compatible with ISC; anything
+  copyleft needs discussion in an issue before it is introduced.
+- **Do not add license headers to source files.** Attribution lives in `LICENSE`,
+  `manifest.json`, and the README, so it has a single source of truth.
+
+Attribution in shipped metadata must use the organization name **Fundaments Work**, not
+personal handles, so that it matches `manifest.json` and the GitHub organization.

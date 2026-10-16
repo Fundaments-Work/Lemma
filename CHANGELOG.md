@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- **Licensing Attribution:** Corrected the copyright holder in `LICENSE` from the legacy personal handle to **Fundaments Work** (2025-2026), correcting a mismatch with `manifest.json`, `package.json`, and the GitHub organization introduced by the 1.1.3 organization migration. The license terms themselves are unchanged: Lemma remains under the ISC (OBSD) license, only the attribution line was wrong.
+
+### Added
+- **Third-Party Notices:** Added [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) documenting the licenses of dependencies bundled into `main.js`, including the Apache-2.0 attribution requirements for `pouchdb-browser`. Ships alongside `LICENSE` in release artifacts.
+- **License Terms in Contributing Guide:** Documented inbound contribution licensing under [`CONTRIBUTING.md`](CONTRIBUTING.md) (ISC, no separate CLA).
+- **License Row in Settings:** Added a license setting with a link to the license text to the About tab.
+
+### Documentation
+- **Completed Design Plans:** Moved the in-place image occlusion plan to [`docs/plans/done/`](docs/plans/done/) with `Status: Done`, repointed the stale legacy-org issue link to the `Fundaments-Work` org, and revised the plan to describe the shipped implementation (the `isInPlaceImageCard` helper, type-in exclusion, `Space`/`P`/`F` peek shortcuts, and the final CSS and test coverage).
+
 ## [1.1.3] - 2026-10-12
 
 ### Added

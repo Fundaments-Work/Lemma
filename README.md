@@ -6,7 +6,7 @@
 
 <img src="https://img.shields.io/badge/Obsidian-Plugin-7C3AED?style=flat-square&logo=obsidian&logoColor=white" alt="Obsidian Plugin">
 <img src="https://img.shields.io/github/v/release/Fundaments-Work/Lemma?style=flat-square&color=7C3AED&label=version" alt="Version">
-<img src="https://img.shields.io/github/license/Fundaments-Work/Lemma?style=flat-square&color=22c55e" alt="License">
+<img src="https://img.shields.io/github/license/Fundaments-Work/Lemma?style=flat-square&color=22c55e" alt="License: ISC (OBSD)">
 <img src="https://img.shields.io/badge/algorithm-FSRS%204.5-f59e0b?style=flat-square" alt="FSRS">
 <img src="https://img.shields.io/badge/platform-Desktop%20%7C%20Mobile-3b82f6?style=flat-square" alt="Platform">
 
@@ -277,6 +277,9 @@ tags: [review]
    ```
 3. Reload Obsidian and enable the plugin under **Settings → Community plugins**
 
+Release archives also include `LICENSE` and `THIRD_PARTY_NOTICES.md`. Copy them into
+the plugin folder if you want to keep the licensing terms alongside the installed copy.
+
 ---
 
 ## Support
@@ -299,4 +302,17 @@ Contributions, bug reports, and feature requests are welcome.
 
 ## License
 
-ISC License — see [LICENSE](LICENSE) for details.
+Lemma is released under the **ISC License**, authored by OpenBSD and therefore also
+known as the **OBSD** (OpenBSD) license. Both names refer to the same license text.
+
+Copyright (C) 2025-2026 Fundaments Work
+
+The permissive terms allow use, modification, and distribution for any purpose,
+with or without fee, provided the copyright notice and permission notice are
+retained. There is no warranty.
+
+- **Full license text:** [LICENSE](LICENSE)
+- **Bundled dependencies:** [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+
+Contributions are accepted under the same terms. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for details.

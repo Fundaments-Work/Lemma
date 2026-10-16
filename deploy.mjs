@@ -29,7 +29,7 @@ const pluginDir = join(vaultPath, '.obsidian', 'plugins', pluginId);
 mkdirSync(pluginDir, { recursive: true });
 
 const requiredFiles = ['main.js', 'manifest.json'];
-const optionalFiles = ['styles.css', 'data.json', 'icon.svg'];
+const optionalFiles = ['styles.css', 'data.json', 'icon.svg', 'LICENSE', 'THIRD_PARTY_NOTICES.md'];
 
 for (const file of requiredFiles) {
 	if (!existsSync(file)) {

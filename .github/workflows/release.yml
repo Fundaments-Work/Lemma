@@ -72,4 +72,6 @@ jobs:
             main.js
             manifest.json
             styles.css
+            LICENSE
+            THIRD_PARTY_NOTICES.md
           fail_on_unmatched_files: true
