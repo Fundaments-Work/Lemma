@@ -360,7 +360,7 @@ export class FSRSSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('License')
-            .setDesc(`Released under the ISC (OpenBSD) license, copyright 2025-2026 ${this.plugin.manifest.author}.`)
+            .setDesc(`Released under the MIT license, copyright 2025-2026 ${this.plugin.manifest.author}.`)
             .addButton((btn) => btn
                 .setButtonText('View license')
                 .onClick(() => {

@@ -4,12 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Relicensed to MIT:** Lemma moves from the ISC License to the **MIT License** from v1.1.4 onward, aligning with Theorem and with the licence already stated across the Fundaments.work site. Both licences are permissive and materially equivalent, so no existing user loses any right: anything distributed as ISC through v1.1.3 remains ISC, and MIT additionally grants an express patent licence. Copyright holder is Fundaments Work (2025-2026).
+
 ### Fixed
-- **Licensing Attribution:** Corrected the copyright holder in `LICENSE` from the legacy personal handle to **Fundaments Work** (2025-2026), correcting a mismatch with `manifest.json`, `package.json`, and the GitHub organization introduced by the 1.1.3 organization migration. The license terms themselves are unchanged: Lemma remains under the ISC (OBSD) license, only the attribution line was wrong.
+- **Licensing Attribution:** Corrected the copyright holder in `LICENSE` from the legacy personal handle to **Fundaments Work** (2025-2026), fixing a mismatch with `manifest.json`, `package.json`, and the GitHub organization that had been introduced by the 1.1.3 organization migration.
 
 ### Added
 - **Third-Party Notices:** Added [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) documenting the licenses of dependencies bundled into `main.js`, including the Apache-2.0 attribution requirements for `pouchdb-browser`. Ships alongside `LICENSE` in release artifacts.
-- **License Terms in Contributing Guide:** Documented inbound contribution licensing under [`CONTRIBUTING.md`](CONTRIBUTING.md) (ISC, no separate CLA).
+- **License Terms in Contributing Guide:** Documented inbound contribution licensing under [`CONTRIBUTING.md`](CONTRIBUTING.md) (MIT, no separate CLA).
 - **License Row in Settings:** Added a license setting with a link to the license text to the About tab.
 
 ### Documentation

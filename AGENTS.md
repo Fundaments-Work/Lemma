@@ -20,11 +20,11 @@ node deploy.mjs <vault-path>   # copy built files to vault
 
 ## Licensing
 
-- **License**: ISC (also known as OBSD / OpenBSD). Do not describe it as MIT
+- **License**: MIT. Releases through v1.1.3 were ISC (OBSD); v1.1.4 onward is MIT
 - **Copyright holder**: Fundaments Work, year range `2025-2026`. Never use the legacy
   `Sapienskid` handle in shipped files
 - **Single source of truth**: `LICENSE` file. Attribution also appears in `manifest.json`,
-  `package.json` (`license: ISC`), the README badge and License section, and the settings
+  `package.json` (`license: MIT`), the README badge and License section, and the settings
   About tab. Change all of them together
 - **Bundled dependencies**: all runtime deps are permissively licensed. Update the version
   table in `THIRD_PARTY_NOTICES.md` whenever a runtime dependency is added or upgraded

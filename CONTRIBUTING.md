@@ -66,15 +66,18 @@ Before submitting a pull request:
 
 ## Licensing
 
-Lemma is licensed under the **ISC License** (the OpenBSD / OBSD license). Full text is in
-[LICENSE](LICENSE).
+Lemma is licensed under the **MIT License**. Full text is in [LICENSE](LICENSE).
+
+Releases up to and including **v1.1.3** were distributed under the ISC License (OBSD);
+from **v1.1.4** onward the plugin is MIT. Both are permissive, so this does not restrict
+any existing user.
 
 - **Your contributions are licensed the same way.** By opening a pull request, you agree your
-  contribution is provided under the ISC License, with copyright held by Fundaments Work.
+  contribution is provided under the MIT License, with copyright held by Fundaments Work.
 - **No separate CLA required.** There is no individual contributor licensing agreement to sign.
 - **Keep dependency notices current.** If your change adds or upgrades a bundled runtime
   dependency, update the version table in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-  All current dependencies are permissively licensed and compatible with ISC; anything
+  All current dependencies are permissively licensed and compatible with MIT; anything
   copyleft needs discussion in an issue before it is introduced.
 - **Do not add license headers to source files.** Attribution lives in `LICENSE`,
   `manifest.json`, and the README, so it has a single source of truth.

@@ -6,7 +6,7 @@
 
 <img src="https://img.shields.io/badge/Obsidian-Plugin-7C3AED?style=flat-square&logo=obsidian&logoColor=white" alt="Obsidian Plugin">
 <img src="https://img.shields.io/github/v/release/Fundaments-Work/Lemma?style=flat-square&color=7C3AED&label=version" alt="Version">
-<img src="https://img.shields.io/github/license/Fundaments-Work/Lemma?style=flat-square&color=22c55e" alt="License: ISC (OBSD)">
+<img src="https://img.shields.io/github/license/Fundaments-Work/Lemma?style=flat-square&color=22c55e" alt="MIT License">
 <img src="https://img.shields.io/badge/algorithm-FSRS%204.5-f59e0b?style=flat-square" alt="FSRS">
 <img src="https://img.shields.io/badge/platform-Desktop%20%7C%20Mobile-3b82f6?style=flat-square" alt="Platform">
 
@@ -302,14 +302,18 @@ Contributions, bug reports, and feature requests are welcome.
 
 ## License
 
-Lemma is released under the **ISC License**, authored by OpenBSD and therefore also
-known as the **OBSD** (OpenBSD) license. Both names refer to the same license text.
+Lemma is released under the **MIT License**.
 
-Copyright (C) 2025-2026 Fundaments Work
+Copyright (c) 2025-2026 Fundaments Work
 
-The permissive terms allow use, modification, and distribution for any purpose,
-with or without fee, provided the copyright notice and permission notice are
-retained. There is no warranty.
+The permissive terms allow use, copying, modification, merging, publication, distribution,
+sublicensing, and sale, provided the copyright notice and permission notice are retained.
+There is no warranty.
+
+> **License history:** releases up to and including **v1.1.3** were distributed under the
+> ISC License (also known as OBSD). From **v1.1.4** onward, Lemma is MIT. Both are
+> permissive and materially equivalent; users of any version may use, modify, and
+> redistribute it under the terms of the release they received.
 
 - **Full license text:** [LICENSE](LICENSE)
 - **Bundled dependencies:** [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)

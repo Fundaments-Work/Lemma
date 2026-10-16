@@ -23,7 +23,7 @@ export default defineConfig([
 			"obsidianmd/ui/sentence-case": [
 				"error",
 				{
-					acronyms: ["FSRS", "URL", "JSON", "XP", "CRDT", "ISC", "OBSD"],
+					acronyms: ["FSRS", "URL", "JSON", "XP", "CRDT", "MIT"],
 					brands: ["Lemma", "Obsidian", "PouchDB", "CouchDB", "IndexedDB", "Fundaments"],
 				},
 			],

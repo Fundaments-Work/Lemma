@@ -1,8 +1,8 @@
 # Third-party notices
 
-Lemma itself is licensed under the ISC License (see [LICENSE](LICENSE)). The bundled
+Lemma itself is licensed under the MIT License (see [LICENSE](LICENSE)). The bundled
 `main.js` redistributes the packages below, each under its own permissive license.
-None of them are copyleft, so the ISC terms of Lemma apply to the whole bundle.
+None of them are copyleft, so the MIT terms of Lemma apply to the whole bundle.
 
 This file lists direct runtime dependencies. Transitive dependencies are bundled by
 esbuild from the same packages and retain their own license terms.
