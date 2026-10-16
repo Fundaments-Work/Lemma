@@ -35,6 +35,9 @@ jobs:
             exit 1
           fi
 
+      - name: Check content sync
+        run: node scripts/check-content.mjs
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

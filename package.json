@@ -10,7 +10,8 @@
     "lint": "eslint main.ts src/**/*.ts",
     "lint:fix": "eslint main.ts src/**/*.ts --fix",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:content": "node scripts/check-content.mjs"
   },
   "keywords": [
     "obsidian-md",

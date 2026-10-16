@@ -4,11 +4,12 @@
 
 ```bash
 pnpm install
-pnpm test          # vitest test suite (39 tests)
-pnpm run build     # typecheck + bundle
-pnpm run lint      # eslint with eslint-plugin-obsidianmd
-pnpm run lint:fix  # auto-fix lint
-pnpm run dev       # dev mode (watch, sourcemaps)
+pnpm test             # vitest test suite (39 tests)
+pnpm run build        # typecheck + bundle
+pnpm run lint         # eslint with eslint-plugin-obsidianmd
+pnpm run lint:fix     # auto-fix lint
+pnpm run dev          # dev mode (watch, sourcemaps)
+pnpm check:content    # Buy Me Momo URL vs Fundaments-Work/content
 node deploy.mjs <vault-path>   # copy built files to vault
 ```
 
@@ -16,7 +17,44 @@ node deploy.mjs <vault-path>   # copy built files to vault
 
 - **Organization**: Fundaments Work
 - **Repository**: [Fundaments-Work/Lemma](https://github.com/Fundaments-Work/Lemma)
-- **Sponsorship**: [Buy Me a Momo](https://buymemomo.com/usefundaments)
+- **Sponsorship**: [Buy Me Momo](https://buymemomo.com/usefundaments)
+
+## Cross-repo contracts
+
+Two other repos hold facts this repo depends on. Both are **read-only** from
+here: change them in the source repo, never here.
+
+### `Fundaments-Work/content` — shared facts
+
+- **Canonical home of the Buy Me Momo URL**: `support.json`, channel `buyMeMomo`.
+- This repo keeps the literal in four places: `manifest.json` (`fundingUrl`),
+  `.github/FUNDING.yml`, `README.md`, and `src/ui/FSRSSettingsTab.ts`. All four
+  are deliberate literals — Obsidian reads `manifest.json` straight off disk and
+  the rest ship as built artifacts, so none of them can depend on a sibling repo
+  at build time without adding real fragility to the release pipeline.
+- `pnpm check:content` collects every Buy Me Momo URL in those files, compares
+  the set against the canonical one, and fails on drift. It runs in
+  `.github/workflows/release.yml` before the build, so a stale URL cannot ship.
+- **To change the link: change `content/support.json` first**, push it, then
+  update the literals here. Fixing only this repo leaves both landing sites and
+  Theorem advertising a dead URL.
+- The check needs the content repo or the network. It resolves a sibling
+  checkout (`../content`), then `--from <path>` / `CONTENT_DIR`, then
+  `raw.githubusercontent`. It is a script rather than a vitest case on purpose:
+  `pnpm test` stays hermetic and offline-capable.
+
+### `Fundaments-Work/design-system` — visual language
+
+- **Lemma is deliberately outside the system.** It runs inside someone else's
+  application and must inherit that application's theme. Its interface uses
+  Obsidian's own CSS variables and nothing more. Its README, badge and release
+  surface follow the lab's tokens like any other Fundaments.work page.
+- This is a decision, not an omission — do not "fix" it by pulling lab tokens
+  into the plugin UI.
+- Non-negotiable studio rules still apply to anything published under the
+  Fundaments.work name: corner radius `0`, no emojis in release notes and
+  official guides, DM Sans/DM Mono at 300/400 only, and official brand marks used
+  unchanged (never redrawn, never rotated or rounded).
 
 ## Licensing
 
@@ -127,7 +165,8 @@ Validate by:
 1. `pnpm test` (Vitest: 39 tests covering card parsing, data manager, and image occlusion)
 2. `pnpm run lint` (ESLint: strict Obsidian plugin rules, zero warnings/errors required)
 3. `pnpm run build` (TypeScript check + esbuild production bundle)
-4. `node deploy.mjs <vault-path>` (deploy to test vault)
+4. `pnpm check:content` (Buy Me Momo URL matches `Fundaments-Work/content`)
+5. `node deploy.mjs <vault-path>` (deploy to test vault)
 
 ## Release
 
