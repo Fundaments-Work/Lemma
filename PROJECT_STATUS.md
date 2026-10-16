@@ -43,7 +43,8 @@ All core features are implemented and functional:
   - Zero-allocation tag cache checks (`hasTag` fast path)
   - File modification time caching (`fileMtimes`) skipping unchanged notes
   - Single-pass O(N) pre-computed heading breadcrumbs
-- [ ] **Stats v2** — retention curve, maturity donut, monthly heatmap, interval histogram, per-deck breakdown
+- [x] Stats v2: retention curve (predicted vs actual), card maturity doughnut, 12-month activity heatmap, review interval histogram, and per-deck stacked breakdown
+- [x] Licensing: copyright attribution corrected to Fundaments Work (2025-2026), `THIRD_PARTY_NOTICES.md` added for bundled dependencies, contribution terms documented, license row added to the settings About tab
 - [ ] Per-deck settings overrides
 
 ### Phase 3 — Polish (planned)
@@ -68,11 +69,10 @@ All core features are implemented and functional:
 
 ## Near-term priorities
 
-1. **Stats v2** — deeper learning analytics (retention curve, maturity donut, interval histogram)
-2. **Per-deck settings** — per-deck new/review limits & desired retention overrides
-3. **PouchDB write batching** — batch review logs to reduce IndexedDB write cycles
-4. **Data export/import** — JSON/Anki package backup and restore
-5. **i18n** — extract UI strings for community translation
+1. **Per-deck settings** — per-deck new/review limits & desired retention overrides
+2. **PouchDB write batching** — batch review logs to reduce IndexedDB write cycles
+3. **Data export/import** — JSON/Anki package backup and restore
+4. **i18n** — extract UI strings for community translation
 
 ## Long-term possibilities
 
@@ -83,4 +83,4 @@ All core features are implemented and functional:
 
 ---
 
-*Last updated: 2026-10-12*
+*Last updated: 2026-10-16*

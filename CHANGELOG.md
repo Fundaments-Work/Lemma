@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 
 ### Documentation
 - **Completed Design Plans:** Moved the in-place image occlusion plan to [`docs/plans/done/`](docs/plans/done/) with `Status: Done`, repointed the stale legacy-org issue link to the `Fundaments-Work` org, and revised the plan to describe the shipped implementation (the `isInPlaceImageCard` helper, type-in exclusion, `Space`/`P`/`F` peek shortcuts, and the final CSS and test coverage).
+- **Stale Documentation Corrections:** [`DESIGN.md`](DESIGN.md) listed 8 of the 15 registered commands and omitted the `editor-menu` event, and [`PROJECT_STATUS.md`](PROJECT_STATUS.md) still tracked Stats v2 as incomplete and led its priority list with it, despite the retention curve, maturity doughnut, 12-month heatmap, interval histogram, and per-deck breakdown all shipping in [`StatsModal`](src/ui/StatsModal.ts). Corrected the command and event tables, documented the 350ms file-batching versus 500ms dashboard debounce windows, and added the shipped type-in and in-place occlusion behaviour to the `ReviewModal` section.
 
 ## [1.1.3] - 2026-10-12
 

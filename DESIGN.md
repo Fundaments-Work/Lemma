@@ -259,6 +259,8 @@ IndexedDB (local)  ←PouchDB live sync→  CouchDB (remote)
 - Keyboard: Space/Enter = show answer, 1-4 = rate, Esc = close
 - Swipe gestures: left=Again, down=Hard, right=Good, up=Easy
 - Card context breadcrumb (heading hierarchy)
+- Type-in cards (`?type`): typing input with live character and keyword diff against the answer, revealed before the rating buttons appear
+- In-place image occlusion: image-only cards swap masked/revealed image in the same viewport box via the `fsrs-card-inplace` class, with tap (pointer travel under 10px) or Space/Enter/P/F to peek, driven by `activeInPlaceView`
 - Completion screen with session stats
 
 ### BrowseModal (`Modal`)
@@ -307,34 +309,44 @@ IndexedDB (local)  ←PouchDB live sync→  CouchDB (remote)
 - General: PouchDB toggle/migration, deck tag, review limits, font size, reset progress
 - Sync: enable/disable, CouchDB URL/credentials, test/status
 - Advanced: FSRS parameters (retention, interval, weights), weight optimizer
-- About: version, inline quick reference guide
+- About: version, inline quick reference guide, sponsorship link, repository link, and a license row linking to `LICENSE` (holder read from `manifest.author`)
+- Also implements `getSettingDefinitions()` for declarative settings search on Obsidian 1.13+
 
 ---
 
 ## Commands & events
 
-### Commands (8)
+### Commands (15)
 | ID | Action |
 |---|---|
+| `create-card-modal` | Open guided card creation modal with type selector and live preview |
+| `create-deck` | Create a new note pre-tagged with the deck tag |
+| `tag-note-as-deck` | Add the deck tag to the active note |
 | `add-fsrs-flashcard` | Insert block card template at cursor |
 | `add-single-line-card` | Insert Q::A single-line template |
 | `add-reversed-card` | Insert Q:::A reversed template |
 | `add-cloze-card` | Insert cloze template |
+| `cloze-from-selection` | Wrap the current selection in cloze syntax |
+| `add-typein-card` | Insert a type-in card template |
+| `add-typein-single-line` | Insert a type-in single-line template |
 | `open-fsrs-dashboard` | Open dashboard view |
-| `sync-now` | Trigger sync (PouchDB only) |
-| `check-sync-status` | Show sync status notice |
+| `sync-now` | Trigger sync (PouchDB only, registered conditionally) |
+| `check-sync-status` | Show sync status notice (registered conditionally) |
 | `review-notes` | Open note review queue |
 | `reset-all-card-progress` | Open reset modal |
 
-### Registered events (4)
+### Registered events (5)
 | Event | Handler |
 |---|---|
+| `workspace.on('editor-menu')` | Adds the "Create cloze from selection" entry to the editor context menu |
 | `vault.on('create')` | `updateFile()` + debounced refresh |
-| `vault.on('modify')` | `updateFile()` + debounced refresh |
+| `vault.on('modify')` | Queues the file in `pendingModifiedFiles` + debounced refresh |
 | `vault.on('delete')` | `removeDeck()` + `updateFile()` + debounced refresh |
 | `vault.on('rename')` | `renameDeck()` + debounced refresh |
 
-All use 500ms debounce to batch rapid edits.
+Two debounce windows protect typing latency: `modify` events are batched into
+`pendingModifiedFiles` at 350ms before any file is read, and the resulting dashboard
+recalculation is separately debounced at 500ms.
 
 ---
 
