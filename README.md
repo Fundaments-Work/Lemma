@@ -7,7 +7,7 @@
 <img src="https://img.shields.io/badge/Obsidian-Plugin-7C3AED?style=flat-square&logo=obsidian&logoColor=white" alt="Obsidian Plugin">
 <img src="https://img.shields.io/github/v/release/Fundaments-Work/Lemma?style=flat-square&color=7C3AED&label=version" alt="Version">
 <img src="https://img.shields.io/github/license/Fundaments-Work/Lemma?style=flat-square&color=22c55e" alt="MIT License">
-<img src="https://img.shields.io/badge/algorithm-FSRS%204.5-f59e0b?style=flat-square" alt="FSRS">
+<img src="https://img.shields.io/badge/algorithm-FSRS--5-f59e0b?style=flat-square" alt="FSRS">
 <img src="https://img.shields.io/badge/platform-Desktop%20%7C%20Mobile-3b82f6?style=flat-square" alt="Platform">
 
 <br/><br/>
@@ -53,10 +53,10 @@ Most spaced repetition tools require leaving your knowledge base, exporting note
 | Feature | Lemma | Anki | Standard SR Plugins |
 |---|:---:|:---:|:---:|
 | Native Markdown workflow | Yes | No | Yes |
-| FSRS scheduling | Yes | Yes (addon) | Partial |
+| FSRS scheduling | Yes | Yes (built in) | Partial |
 | Mobile support | Yes | Yes | Varies |
 | LaTeX / rich Markdown | Yes | Yes | Varies |
-| Cross-device sync (CouchDB) | Yes | Yes | No |
+| Cross-device sync (CouchDB) | Yes | Yes | Varies |
 | Custom study sessions | Yes | Yes | No |
 | Zero file clutter | Yes | N/A | Varies |
 | Open source | Yes | Yes | Yes |
@@ -66,7 +66,7 @@ Most spaced repetition tools require leaving your knowledge base, exporting note
 ## Features
 
 ### FSRS Scheduling
-Lemma uses **FSRS** (Free Spaced Repetition Scheduler), a modern scheduling algorithm developed from cognitive science research. It models memory stability and retrievability based on your individual recall patterns.
+Lemma uses **FSRS-5** (Free Spaced Repetition Scheduler, via `ts-fsrs`), a modern scheduling algorithm developed from cognitive science research. It models memory stability and retrievability based on your individual recall patterns.
 
 ### Cards Live in Notes
 Write flashcards directly in any Markdown note without imports or app switching.
@@ -85,13 +85,13 @@ The ==c1::mitochondria== is the powerhouse of the ==c2::cell==.
 Each cloze deletion is scheduled independently.
 
 ### Dashboard View
-View all decks in a single overview with due counts, new cards, and total reviewed.
+View all decks in a single overview with total cards, due cards, and new cards at a glance.
 
 ### Custom Study Sessions
 Filter review queues by **tag**, **card state** (new, learning, due), or configure a **card limit** for targeted study and exam preparation.
 
 ### Review Statistics
-Analyze learning progress with retention curves, card maturity distribution, interval histograms, 30-day activity, and 7-day forecast charts.
+Analyze learning progress with retention curves, card maturity distribution, interval histograms, and 30-day activity.
 
 ### Mobile Support
 Responsive review interface designed for desktop and mobile, with safe-area insets and touch-optimized navigation.
@@ -100,13 +100,13 @@ Responsive review interface designed for desktop and mobile, with safe-area inse
 Review anatomy and technical diagrams in place without vertical shifting. Diagram cards automatically detect image pairs, swapping masks in the exact same viewport position with tap/peek toggling.
 
 ### Type-In Active Recall
-Type answers directly into the review card with instant character and keyword difference highlighting before revealing FSRS rating buttons.
+Type answers directly into the review card and get a Correct / Close match / Not correct verdict before revealing FSRS rating buttons.
 
 ### Guided Card & Deck Creation
 Interactive creation modals with dropdown format selection, live syntax previews, and automated deck tagging so you never have to memorize card syntax.
 
 ### Optional CouchDB Sync
-Connect to self-hosted CouchDB or Cloudant instances to sync review history seamlessly across devices.
+Review data is stored on each device (IndexedDB). Optionally connect your own CouchDB or Cloudant instance to sync it across devices.
 
 ---
 
@@ -130,7 +130,7 @@ What is spaced repetition?
 A learning technique that schedules reviews at increasing intervals to maximize long-term retention.
 ```
 
-4. Open the **Lemma dashboard** from the status bar or Command Palette (**Open dashboard**).
+4. Open the **Lemma dashboard** from the ribbon, the status bar (desktop), or the Command Palette (**Open dashboard**).
 
 **Full syntax documentation:** [FLASHCARD_GUIDE.md](FLASHCARD_GUIDE.md)
 
@@ -157,8 +157,8 @@ Fast atomic flashcards on a single line.
 What is the capital of Japan?::Tokyo ^single-001
 ```
 
-### 3. Bidirectional (Reversed) Cards
-Generates a two-way recall card where the prompt and answer are tested in reverse.
+### 3. Reversed Cards
+Generates one card that shows the answer and asks you to recall the question.
 
 ```markdown
 Mitochondria:::Powerhouse of the cell ^rev-001
@@ -179,7 +179,7 @@ Swaps occluded diagrams with revealed answers in-place without vertical displace
 ```
 
 ### 6. Type-In Active Recall Cards
-Prompts you to type your answer and provides instant character and keyword comparison before revealing ratings.
+Prompts you to type your answer and marks it Correct, Close match, or Not correct before revealing ratings.
 
 ```markdown
 ?type What is the SI unit of electric current?::Ampere ^typein-001
@@ -204,7 +204,7 @@ tags: [review]
 ```
 
 > [!TIP]
-> Add a `^block-id` to cards so review history persists across content edits.
+> Add a `^block-id` to each card to give it a stable ID.
 
 ---
 
@@ -235,7 +235,7 @@ tags: [review]
 | `Tag current note as flashcard deck` | Add the deck tag to the active note |
 | `Add a new flashcard` | Insert a card template with a pre-generated block ID |
 | `Add a single-line card` | Insert a single-line card template |
-| `Add a reversed card` | Insert a bidirectional card template |
+| `Add a reversed card` | Insert a reversed card template |
 | `Add a cloze card` | Insert a cloze deletion template |
 | `Create cloze from selection` | Wrap selected text in cloze syntax |
 | `Add a type-in card` | Insert a type-in card template |
@@ -253,7 +253,7 @@ tags: [review]
 | Setting | Description |
 |---|---|
 | **Deck tag** | Tag identifying deck files (default: `flashcards`) |
-| **Max new cards/day** | Daily limit on new card introductions |
+| **Max new cards/day** | New-card limit, applied per deck |
 | **Max reviews/day** | Daily limit on review cards |
 | **Review font size** | Font size in the review modal |
 | **FSRS parameters** | Algorithm weights and retention target configuration |
