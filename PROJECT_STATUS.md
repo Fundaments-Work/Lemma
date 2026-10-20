@@ -1,6 +1,6 @@
 # Lemma — Project status
 
-## Current state (v1.1.4)
+## Current state (v1.1.5)
 
 All core features are implemented and functional:
 
