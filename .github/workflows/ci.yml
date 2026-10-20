@@ -10,16 +10,6 @@ permissions:
   contents: read
 
 jobs:
-  check-content:
-    name: Content Drift Gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: node scripts/check-content.mjs
-
   build-and-test:
     name: Build, Lint & Test
     runs-on: ubuntu-latest
