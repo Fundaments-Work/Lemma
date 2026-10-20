@@ -25,6 +25,7 @@ All notable changes to this project will be documented in this file.
 - **Scanner Type Check:** Added `skipLibCheck` to `tsconfig.json` so the scanner's standalone `npx tsc --noEmit` matches the build script instead of failing on third-party type declarations.
 - **Minimum Obsidian Version:** Raised `minAppVersion` from `1.4.0` to `1.7.2` to match APIs the plugin already uses (the `revealLeaf` calls that open the dashboard require 1.7.2). The plugin declared support for versions where opening the dashboard could fail.
 - **Reproducible Typings:** Pinned `obsidian` to `1.8.7` instead of a caret range. The caret resolved to 1.14.4 under npm, whose declarative-settings typings do not match this release's settings implementation and broke the source-review build.
+- **Reproducible Release Build:** The release workflow now installs with `npm ci` and builds with npm, matching the community scanner's dependency layout. pnpm's symlinked layout produced a different `main.js`, which would fail the scanner's byte-for-byte build verification.
 
 ### Added
 - **Third-Party Notices:** Added [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) documenting the licenses of dependencies bundled into `main.js`, including the Apache-2.0 attribution requirements for `pouchdb-browser`. Lives in the repository alongside `LICENSE`; release assets are limited to the files Obsidian supports.

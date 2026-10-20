@@ -43,25 +43,20 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci --no-audit --no-fund
 
       - name: Audit production dependencies
-        run: pnpm audit --prod
+        run: npm audit --omit=dev
 
       - name: Test
-        run: pnpm test
+        run: npm test
 
       - name: Lint
-        run: pnpm run lint
+        run: npm run lint
 
       - name: Build plugin
-        run: pnpm run build
+        run: npm run build
 
       - name: Generate artifact attestations
         uses: actions/attest-build-provenance@v2
