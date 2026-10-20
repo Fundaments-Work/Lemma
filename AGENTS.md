@@ -91,7 +91,9 @@ src/
 │   └── main.ts           # Plugin lifecycle, commands, ribbon, debounced vault events
 ├── data/
 │   ├── DataManager.ts    # State orchestration, mtime caching, tag parsing, FSRS scheduling
-│   ├── constants.ts      # Constants, defaults, Lucide-standard SVG icon, hash utilities
+│   ├── backup.ts         # Backup file format: build, parse and validate (also reads old data.json)
+│   ├── importCards.ts    # Anki text / CSV -> Lemma Markdown converter
+│   ├── constants.ts      # Constants, defaults, database name resolution, Lucide-standard SVG icon, hash utilities
 │   └── types.ts          # Type definitions (Card, Deck, FSRS, Settings)
 ├── database/
 │   ├── PouchDBManager.ts # IndexedDB storage + live CouchDB sync
@@ -105,6 +107,8 @@ src/
     ├── CustomStudyModal.ts# Filtered study queue
     ├── CreateCardModal.ts# Guided card creation with live preview
     ├── CreateDeckModal.ts# Guided deck creation modal
+    ├── ImportBackupModal.ts # Pick and merge a review data backup
+    ├── ImportCardsModal.ts  # Pick a file and create a deck note from it
     ├── HelpModal.ts      # In-app markdown documentation viewer
     ├── ResetProgressModal.ts # Progress reset modal
     └── FSRSSettingsTab.ts# 4-tab settings interface

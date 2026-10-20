@@ -48,6 +48,7 @@ Select text in a note, right-click (or long-press on mobile) and choose **Create
 | `3` | Answer shown | Good |
 | `4` | Answer shown | Easy |
 | `Space`, `Enter`, `P`, `F` | Image card, answer shown | Toggle between question and answer images |
+| `Z` | After the first rating | Undo the last rating |
 | `Enter` | Type-in box | Check the answer |
 | `Esc` | Any time | Close the window; ratings so far are kept |
 

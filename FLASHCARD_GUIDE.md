@@ -398,6 +398,7 @@ Run the command `Tag current note as flashcard deck` on any existing note to imm
 | `2` | Rate: Hard |
 | `3` | Rate: Good |
 | `4` | Rate: Easy |
+| `Z` | Undo the last rating |
 | `Esc` | Exit review session |
 | `←` / `→` | Navigate (Browse mode) |
 | `Swipe left` | Rate: Again |

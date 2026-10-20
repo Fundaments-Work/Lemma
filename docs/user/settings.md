@@ -104,7 +104,9 @@ Reset progress is available from the General tab and from the command palette (*
 2. Type `delete` in the confirmation field.
 3. Click **Delete all progress**.
 
-Lemma then clears every card's schedule and all review history, so every card becomes new. With PouchDB on it deletes the local database and creates a fresh one; if sync is enabled it reconnects afterwards. Gamification totals (streak and XP) are not cleared by this reset. Your notes are not changed.
+Lemma then clears every card's schedule and all review history, so every card becomes new. With PouchDB on it deletes the local database and creates a fresh one; if sync is enabled it reconnects afterwards.
+
+Before you reset, run **Export review data (backup)** so you can restore your progress. See [Backup and import](backup-and-import.md). If you use several vaults that were set up with an older version, they share one database named `lemma_local` (see [Sync and data](sync-and-data.md#the-local-database)), and resetting deletes that shared database, which removes the progress of those other vaults too. Vaults where Lemma was installed fresh from 1.2.0 have their own database and are not affected. Gamification totals (streak and XP) are not cleared by this reset. Your notes are not changed.
 
 If sync is on, other devices still hold their copies of the old data and may send it back. Reset on every device, or turn sync off first.
 

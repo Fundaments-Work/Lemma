@@ -24,12 +24,16 @@ FSRSFlashcardsPlugin (extends Plugin)    [src/plugin/main.ts]
 ├── ResetProgressModal (Modal)           [src/ui/ResetProgressModal.ts]
 ├── ReviewNoteModal (Modal)              [src/ui/ReviewNoteModal.ts]
 ├── OptimizerModal (Modal)               [src/ui/OptimizerModal.ts]
+├── ImportBackupModal (Modal)            [src/ui/ImportBackupModal.ts]
+├── ImportCardsModal (Modal)             [src/ui/ImportCardsModal.ts]
 └── FSRSSettingsTab (PluginSettingTab)   [src/ui/FSRSSettingsTab.ts]
 ```
 
 Standalone modules:
 - `src/data/types.ts` — All interfaces (Card, Deck, ReviewLog, etc.)
-- `src/data/constants.ts` — Constants, utilities, hash functions
+- `src/data/constants.ts` — Constants, utilities, hash functions, database name resolution
+- `src/data/backup.ts` — Backup file format (build, parse, validate)
+- `src/data/importCards.ts` — Anki text and CSV to Lemma Markdown converter
 - `src/database/DataMigration.ts` — Legacy JSON → PouchDB migration
 
 ### Data flow

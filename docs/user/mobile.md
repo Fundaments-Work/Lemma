@@ -27,7 +27,7 @@ The review window uses the full screen. Card content runs edge to edge, the head
 
 1. Tap a deck's play icon or **Study all due**.
 2. Tap **Show answer**.
-3. Rate with the **Again**, **Hard**, **Good** or **Easy** buttons, or swipe the card.
+3. Rate with the **Again**, **Hard**, **Good** or **Easy** buttons, or swipe the card. To take back a rating, tap the undo icon beside the close button.
 
 Swipe directions after the answer is shown:
 
