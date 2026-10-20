@@ -313,8 +313,9 @@ credentials and review data in clear text.
    ```
 3. Reload Obsidian and enable the plugin under **Settings → Community plugins**
 
-Release archives also include `LICENSE` and `THIRD_PARTY_NOTICES.md`. Copy them into
-the plugin folder if you want to keep the licensing terms alongside the installed copy.
+Release assets contain only `main.js`, `manifest.json`, and `styles.css`. `LICENSE` and
+`THIRD_PARTY_NOTICES.md` remain in the repository if you want to keep the licensing terms
+alongside the installed copy.
 
 ---
 

@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.5] - 2026-10-20
+
+### Fixed
+- **Community Review Release:** Republished the 1.1.4 review-compliance work as 1.1.5 with npm as the only package manager. The `b37174b` source passed the community preview scan, but the directory only creates a new release scan for an incremented version. No plugin behavior changed from 1.1.4.
+
 ## [1.1.4] - 2026-10-20
 
 ### Security
