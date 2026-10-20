@@ -1,3 +1,5 @@
+# Lemma
+
 <div align="center">
 
 <img src="https://raw.githubusercontent.com/Fundaments-Work/Lemma/main/icon.svg" width="96" height="96" alt="Lemma logo" />
@@ -11,8 +13,6 @@
 <img src="https://img.shields.io/badge/platform-Desktop%20%7C%20Mobile-3b82f6?style=flat-square" alt="Platform">
 
 <br/><br/>
-
-<h1>Lemma</h1>
 
 <p><strong>A modern, FSRS-powered spaced repetition plugin that lives inside your notes.</strong><br>
 No separate app. No manual data export. Write, tag, and study directly where your knowledge lives.</p>
@@ -259,6 +259,39 @@ tags: [review]
 | **FSRS parameters** | Algorithm weights and retention target configuration |
 | **PouchDB storage** | IndexedDB storage engine for collections |
 | **Sync** | CouchDB connection and credential settings |
+
+---
+
+## Privacy and network access
+
+Lemma is local-first. It has no telemetry, analytics, ads, or crash reporting.
+
+### Vault access
+
+Lemma indexes Markdown notes only (`vault.getMarkdownFiles()`) so it can find notes tagged
+`#flashcards` or `#review`. It does not enumerate or read non-Markdown files, attachments, or
+data belonging to other plugins.
+
+### Data storage
+
+Settings are saved through Obsidian's plugin data API (`data.json`). Scheduling state and review
+history are stored in IndexedDB through PouchDB. PouchDB performs a `localStorage` capability
+probe, but Lemma never stores vault content or review data in `localStorage` or `sessionStorage`.
+
+### Network access
+
+Lemma makes no network requests by default. It connects to the network only in these cases:
+
+| Destination | When | Purpose |
+|---|---|---|
+| Your CouchDB server | Only after you enable sync | Replicate review data between your devices |
+| `buymemomo.com` | Only when you click the sponsor link | Open the support page in your browser |
+| `github.com` | Only when you click the repository, license, or issue links | Open the linked page in your browser |
+
+Sync is opt-in. The CouchDB password is saved in the plugin data file (`data.json`) so sync can
+reconnect after a restart; Obsidian does not encrypt that file at rest. Use a dedicated CouchDB
+user that can access only the sync database, and use an `https://` URL. An `http://` URL sends
+credentials and review data in clear text.
 
 ---
 

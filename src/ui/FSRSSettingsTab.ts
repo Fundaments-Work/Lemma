@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
 import { generatorParameters } from 'ts-fsrs';
-import { getDocCount, getErrorMessage, buildAuthenticatedUrl } from '../data/constants';
+import { getDocCount, getErrorMessage, buildAuthenticatedUrl, usesInsecureHttp } from '../data/constants';
 import { DataMigration, type LegacyPluginData } from '../database/DataMigration';
 import { ResetProgressModal } from './ResetProgressModal';
 
@@ -200,7 +200,7 @@ export class FSRSSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Password')
-            .setDesc('CouchDB password (stored securely)')
+            .setDesc('CouchDB password (saved in this vault\'s plugin data file)')
             .addText(text => {
                 text.setPlaceholder('Enter password')
                     .setValue(this.plugin.settings.syncPassword)
@@ -464,6 +464,9 @@ export class FSRSSettingsTab extends PluginSettingTab {
 
         try {
             new Notice('Setting up sync...');
+            if (usesInsecureHttp(this.plugin.settings.syncUrl)) {
+                new Notice('Warning: this sync URL uses http. Credentials and review data will be sent unencrypted.', 8000);
+            }
             const syncUrl = buildAuthenticatedUrl(
                 this.plugin.settings.syncUrl,
                 this.plugin.settings.syncDbName,
@@ -494,6 +497,9 @@ export class FSRSSettingsTab extends PluginSettingTab {
 
         try {
             new Notice('Testing sync connection...');
+            if (usesInsecureHttp(this.plugin.settings.syncUrl)) {
+                new Notice('Warning: this sync URL uses http. Credentials and review data will be sent unencrypted.', 8000);
+            }
             const syncUrl = buildAuthenticatedUrl(
                 this.plugin.settings.syncUrl,
                 this.plugin.settings.syncDbName,

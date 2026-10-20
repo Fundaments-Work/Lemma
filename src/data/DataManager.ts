@@ -1,7 +1,7 @@
 import { FSRS, Rating, State, createEmptyCard, type Card as FSRSCard } from 'ts-fsrs';
 import { Notice, TFile, type CachedMetadata } from 'obsidian';
 import type { Card, Deck, FSRSData, FSRSParameters, Gamification, NoteReviewData, PluginData, ReviewLog } from './types';
-import { isRecord, cyrb53hex, getDocsWritten, getErrorMessage, isLikelyCorsOrNetworkErrorMessage, buildAuthenticatedUrl } from './constants';
+import { isRecord, cyrb53hex, getDocsWritten, getErrorMessage, isLikelyCorsOrNetworkErrorMessage, buildAuthenticatedUrl, sanitizeUrlForDisplay } from './constants';
 import { PouchDBManager } from '../database/PouchDBManager';
 
 type FSRSFlashcardsPlugin = import('../plugin/main').FSRSFlashcardsPlugin;
@@ -32,6 +32,10 @@ export class DataManager {
     }
 
     async initializeSync() {
+        if (this.pouchDB) {
+            await this.pouchDB.sanitizeSyncMeta();
+        }
+
         if (this.plugin.settings.syncEnabled
             && this.plugin.settings.syncUrl
             && this.pouchDB) {
@@ -42,7 +46,7 @@ export class DataManager {
                     this.plugin.settings.syncUsername,
                     this.plugin.settings.syncPassword,
                 );
-                console.debug('Initializing sync with:', this.sanitizeUrl(syncUrl));
+                console.debug('Initializing sync with:', sanitizeUrlForDisplay(syncUrl));
 
                 this.pouchDB.onSyncChange((info) => {
                     const docsWritten = getDocsWritten(info);
@@ -81,18 +85,6 @@ export class DataManager {
                 console.error('Failed to initialize sync:', error);
                 new Notice(`Sync initialization failed: ${getErrorMessage(error)}`);
             }
-        }
-    }
-
-    private sanitizeUrl(url: string): string {
-        try {
-            const urlObj = new URL(url);
-            if (urlObj.password) {
-                urlObj.password = '***';
-            }
-            return urlObj.toString();
-        } catch {
-            return url;
         }
     }
 

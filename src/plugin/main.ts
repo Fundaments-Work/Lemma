@@ -1,6 +1,6 @@
 import { Editor, Notice, Plugin, TFile, addIcon, debounce, setIcon } from 'obsidian';
 import { DataManager } from '../data/DataManager';
-import { VIEW_TYPE_DASHBOARD, VIEW_ICON_NAME, STATUS_ICON_NAME, DEFAULT_SETTINGS, generateBlockId, getDocCount, LEMMA_ICON_ID, LEMMA_ICON_SVG } from '../data/constants';
+import { VIEW_TYPE_DASHBOARD, VIEW_ICON_NAME, STATUS_ICON_NAME, DEFAULT_SETTINGS, generateBlockId, getDocCount, LEMMA_ICON_ID, LEMMA_ICON_SVG, sanitizeUrlForDisplay } from '../data/constants';
 import type { FSRSSettings, PluginData } from '../data/types';
 import { DashboardView } from '../ui/DashboardView';
 import { FSRSSettingsTab } from '../ui/FSRSSettingsTab';
@@ -205,7 +205,7 @@ class FSRSFlashcardsPlugin extends Plugin {
                     const status = await pouchDB.getSyncStatus();
                     const info = await pouchDB.getDatabaseInfo();
                     const docCount = getDocCount(info);
-                    new Notice(`Sync status:\n${status.enabled ? '✓ Active' : '✗ Inactive'}\nURL: ${status.remoteUrl || 'Not set'}\nDocuments: ${docCount}\nLast sync: ${status.lastSyncTime ? new Date(status.lastSyncTime).toLocaleString() : 'Never'}`, 10000);
+                    new Notice(`Sync status:\n${status.enabled ? '✓ Active' : '✗ Inactive'}\nURL: ${status.remoteUrl ? sanitizeUrlForDisplay(status.remoteUrl) : 'Not set'}\nDocuments: ${docCount}\nLast sync: ${status.lastSyncTime ? new Date(status.lastSyncTime).toLocaleString() : 'Never'}`, 10000);
                 },
             });
         }
@@ -276,26 +276,26 @@ class FSRSFlashcardsPlugin extends Plugin {
         }, 350, true);
 
         this.registerEvent(this.app.vault.on('create', (file) => {
-            if (file instanceof TFile) {
+            if (file instanceof TFile && file.extension === 'md') {
                 pendingModifiedFiles.add(file);
                 processPendingFiles();
             }
         }));
         this.registerEvent(this.app.vault.on('modify', (file) => {
-            if (file instanceof TFile) {
+            if (file instanceof TFile && file.extension === 'md') {
                 pendingModifiedFiles.add(file);
                 processPendingFiles();
             }
         }));
         this.registerEvent(this.app.vault.on('delete', (file) => {
-            if (file instanceof TFile) {
+            if (file instanceof TFile && file.extension === 'md') {
                 const deckId = this.dataManager.getDeckId(file.path);
                 this.dataManager.removeDeck(deckId);
                 debouncedRefresh();
             }
         }));
         this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
-            if (file instanceof TFile) {
+            if (file instanceof TFile && (file.extension === 'md' || oldPath.endsWith('.md'))) {
                 void this.dataManager.renameDeck(file, oldPath).then(() => {
                     debouncedRefresh();
                 }).catch((e: unknown) => {

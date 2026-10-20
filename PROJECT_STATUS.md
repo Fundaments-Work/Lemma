@@ -1,12 +1,12 @@
 # Lemma — Project status
 
-## Current state (v1.1.3)
+## Current state (v1.1.4)
 
 All core features are implemented and functional:
 
 ### Phase 1 — Foundation (completed)
 - [x] Modular code structure (`src/data/`, `src/ui/`, `src/plugin/`)
-- [x] Test suite — Vitest, 39 tests, Obsidian + PouchDB mocks
+- [x] Test suite — Vitest, 46 tests, Obsidian + PouchDB mocks
 - [x] Single-line card syntax (`Q::A` basic, `Q:::A` reversed)
 - [x] Stable block IDs for single-line cards (`^blockId` suffix)
 - [x] Whole-note review (`#review` tag system)
@@ -45,6 +45,7 @@ All core features are implemented and functional:
   - Single-pass O(N) pre-computed heading breadcrumbs
 - [x] Stats v2: retention curve (predicted vs actual), card maturity doughnut, 12-month activity heatmap, review interval histogram, and per-deck stacked breakdown
 - [x] Licensing: copyright attribution corrected to Fundaments Work (2025-2026), `THIRD_PARTY_NOTICES.md` added for bundled dependencies, contribution terms documented, license row added to the settings About tab
+- [x] Security hardening: CouchDB credentials kept out of replicated sync metadata, credential redaction in status output, insecure HTTP warning, production dependency audit in CI, and community review disclosures for vault, storage, and network access
 - [ ] Per-deck settings overrides
 
 ### Phase 3 — Polish (planned)
@@ -83,4 +84,4 @@ All core features are implemented and functional:
 
 ---
 
-*Last updated: 2026-10-16*
+*Last updated: 2026-10-20*

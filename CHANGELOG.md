@@ -2,13 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.1.4] - 2026-10-20
+
+### Security
+- **CouchDB Credential Exposure:** Sync metadata no longer stores the authenticated URL (which included the CouchDB password) in the `sync_meta` document. That document replicates to the remote database, so the password was exposed to anyone with read access to it. Credentials now stay in memory, only the sanitized server URL is persisted, and legacy metadata is cleaned automatically on load and on the next sync.
+- **Credential Redaction:** The "Check sync status" command and sync debug logging now strip usernames and passwords from the displayed URL.
+- **Plaintext Password Disclosure:** The sync settings no longer claim the CouchDB password is "stored securely". The password is saved in the plugin data file; the README now states this explicitly and recommends a dedicated database user limited to the sync database.
+- **Insecure Transport Warning:** Enabling or testing sync over a non-loopback `http://` URL now warns that credentials and review data are sent unencrypted.
+- **Production Dependency Audit:** The release workflow now runs `pnpm audit --prod` and installs with `--frozen-lockfile`.
 
 ### Changed
 - **Relicensed to MIT:** Lemma moves from the ISC License to the **MIT License** from v1.1.4 onward, aligning with Theorem and with the licence already stated across the Fundaments.work site. Both licences are permissive and materially equivalent, so no existing user loses any right: anything distributed as ISC through v1.1.3 remains ISC, and MIT additionally grants an express patent licence. Copyright holder is Fundaments Work (2025-2026).
+- **Dependency Refresh:** Updated the development toolchain (`esbuild` 0.28.2, `@types/node` 22, `vitest` 4.1.12), reducing reported advisories from 51 to one dev-only advisory in the `obsidian` type definitions. Runtime dependency versions are unchanged.
+- **Dependency Cleanup:** Removed the unused `fsrs-browser` runtime dependency and moved `@types/pouchdb` to `devDependencies`.
+- **Markdown-Only Vault Events:** Create, modify, delete, and rename handlers now ignore non-Markdown files, matching the documented vault access scope.
 
 ### Fixed
 - **Licensing Attribution:** Corrected the copyright holder in `LICENSE` from the legacy personal handle to **Fundaments Work** (2025-2026), fixing a mismatch with `manifest.json`, `package.json`, and the GitHub organization that had been introduced by the 1.1.3 organization migration.
+- **README Title:** Added a Markdown H1 so the README title matches the manifest name.
 
 ### Added
 - **Third-Party Notices:** Added [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) documenting the licenses of dependencies bundled into `main.js`, including the Apache-2.0 attribution requirements for `pouchdb-browser`. Ships alongside `LICENSE` in release artifacts.
@@ -16,6 +27,7 @@ All notable changes to this project will be documented in this file.
 - **License Row in Settings:** Added a license setting with a link to the license text to the About tab.
 
 ### Documentation
+- **Privacy and Network Access:** Documented vault access, local storage, the optional CouchDB connection, and the two external links opened from the settings tab in the README.
 - **Completed Design Plans:** Moved the in-place image occlusion plan to [`docs/plans/done/`](docs/plans/done/) with `Status: Done`, repointed the stale legacy-org issue link to the `Fundaments-Work` org, and revised the plan to describe the shipped implementation (the `isInPlaceImageCard` helper, type-in exclusion, `Space`/`P`/`F` peek shortcuts, and the final CSS and test coverage).
 - **Stale Documentation Corrections:** [`DESIGN.md`](DESIGN.md) listed 8 of the 15 registered commands and omitted the `editor-menu` event, and [`PROJECT_STATUS.md`](PROJECT_STATUS.md) still tracked Stats v2 as incomplete and led its priority list with it, despite the retention curve, maturity doughnut, 12-month heatmap, interval histogram, and per-deck breakdown all shipping in [`StatsModal`](src/ui/StatsModal.ts). Corrected the command and event tables, documented the 350ms file-batching versus 500ms dashboard debounce windows, and added the shipped type-in and in-place occlusion behaviour to the `ReviewModal` section.
 

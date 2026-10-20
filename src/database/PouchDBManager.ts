@@ -62,7 +62,7 @@ export interface SyncMetaDoc {
     syncEnabled: boolean;
 }
 
-import { getErrorMessage } from '../data/constants';
+import { getErrorMessage, sanitizeUrlForDisplay } from '../data/constants';
 
 function getErrorStatus(error: unknown): number | undefined {
     if (typeof error !== 'object' || error === null || !('status' in error)) {
@@ -379,7 +379,10 @@ export class PouchDBManager {
     async setupSync(remoteUrl: string): Promise<void> {
         try {
             this.remoteUrl = remoteUrl;
-            
+
+            // Keep credentials in memory only: sync_meta is replicated to the remote database.
+            const safeRemoteUrl = sanitizeUrlForDisplay(remoteUrl);
+
             // Save sync configuration
             let syncMeta: SyncMetaDoc;
             
@@ -387,7 +390,7 @@ export class PouchDBManager {
                 const existing = await this.db.get<SyncMetaDoc>('sync_meta');
                 syncMeta = {
                     ...existing,
-                    remoteUrl,
+                    remoteUrl: safeRemoteUrl,
                     syncEnabled: true,
                     lastSyncTime: new Date().toISOString()
                 };
@@ -396,7 +399,7 @@ export class PouchDBManager {
                     syncMeta = {
                         _id: 'sync_meta',
                         type: 'sync_meta',
-                        remoteUrl,
+                        remoteUrl: safeRemoteUrl,
                         syncEnabled: true,
                         lastSyncTime: new Date().toISOString()
                     };
@@ -578,6 +581,9 @@ export class PouchDBManager {
         try {
             const syncMeta = await this.db.get<SyncMetaDoc>('sync_meta');
             syncMeta.syncEnabled = false;
+            if (syncMeta.remoteUrl) {
+                syncMeta.remoteUrl = sanitizeUrlForDisplay(syncMeta.remoteUrl);
+            }
             await this.db.put(syncMeta);
         } catch (err: unknown) {
             if (getErrorStatus(err) !== 404) {
@@ -586,7 +592,24 @@ export class PouchDBManager {
         }
     }
 
+    async sanitizeSyncMeta(): Promise<void> {
+        try {
+            const syncMeta = await this.db.get<SyncMetaDoc>('sync_meta');
+            if (!syncMeta.remoteUrl) return;
+            const safeRemoteUrl = sanitizeUrlForDisplay(syncMeta.remoteUrl);
+            if (safeRemoteUrl !== syncMeta.remoteUrl) {
+                syncMeta.remoteUrl = safeRemoteUrl;
+                await this.db.put(syncMeta);
+            }
+        } catch (err: unknown) {
+            if (getErrorStatus(err) !== 404) {
+                console.error('Failed to sanitize sync metadata:', err);
+            }
+        }
+    }
+
     async getSyncStatus(): Promise<{ enabled: boolean; remoteUrl?: string; lastSyncTime?: string }> {
+        await this.sanitizeSyncMeta();
         try {
             const syncMeta = await this.db.get<SyncMetaDoc>('sync_meta');
             return {

@@ -79,6 +79,27 @@ export function sanitizeCredentialForUrl(value: string): string {
     return value.replace(/%(?![0-9a-fA-F]{2})/g, '%25');
 }
 
+export function sanitizeUrlForDisplay(value: string): string {
+    try {
+        const url = new URL(value);
+        url.username = '';
+        url.password = '';
+        return url.toString();
+    } catch {
+        return value.replace(/\/\/[^/@\s]*@/, '//');
+    }
+}
+
+export function usesInsecureHttp(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'http:') return false;
+        return !['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname);
+    } catch {
+        return false;
+    }
+}
+
 export function buildAuthenticatedUrl(url: string, dbName: string, username: string, password: string): string {
     try {
         const urlObj = new URL(url.trim());
