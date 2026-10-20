@@ -1,0 +1,35 @@
+name: Notify Docs Portal
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - 'DESIGN.md'
+      - 'CHANGELOG.md'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch docs-updated to fundaments-landing
+        env:
+          GH_TOKEN: ${{ secrets.STUDIO_SYNC_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::STUDIO_SYNC_TOKEN is not set; skipping docs portal dispatch."
+            exit 0
+          fi
+          echo "Dispatching docs-updated event to Fundaments-Work/fundaments-landing..."
+          gh api repos/Fundaments-Work/fundaments-landing/dispatches \
+            -f event_type=docs-updated \
+            -F "client_payload[product]=lemma" \
+            -F "client_payload[ref]=${{ github.ref_name }}" \
+            -F "client_payload[sha]=${{ github.sha }}" || echo "Failed to dispatch to fundaments-landing"
