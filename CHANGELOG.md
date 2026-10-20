@@ -43,7 +43,7 @@ This release fixes several problems that made progress look lost, and adds undo,
 - Obsidian plugin guideline compliance: appending a card to a closed note uses `Vault.process`, user-supplied paths go through `normalizePath`, the card font size uses a CSS variable instead of an inline style, promise chains are written with async/await, and the console shows only errors by default.
 - Documentation: new Backup and import page, updated guides for reviewing, scheduling, migrating, sync and data, troubleshooting, commands and the README privacy section; corrected `:::` in the flashcard guide (one reversed card, not two), FSRS-5 with ts-fsrs 4.7.1 in the status and design pages, and the stale examples in `data.example.json`.
 - The release workflow no longer runs `scripts/check-content.mjs`, which was removed earlier and would have failed the release.
-- Development: tests run against a real PouchDB on `fake-indexeddb`, a `jsdom` review window, and a verbatim copy of the 1.1.5 database writer (`fake-indexeddb` and `jsdom` are dev dependencies). CONTRIBUTING explains how to test in a disposable Obsidian profile.
+- Development: tests pass on Node 20 and 22 and run against a real PouchDB on `fake-indexeddb`, a `jsdom` review window, and a verbatim copy of the 1.1.5 database writer (`fake-indexeddb` and `jsdom` are dev dependencies). CONTRIBUTING explains how to test in a disposable Obsidian profile.
 
 ## [1.1.5] - 2026-10-20
 
