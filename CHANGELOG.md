@@ -20,14 +20,19 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - **Licensing Attribution:** Corrected the copyright holder in `LICENSE` from the legacy personal handle to **Fundaments Work** (2025-2026), fixing a mismatch with `manifest.json`, `package.json`, and the GitHub organization that had been introduced by the 1.1.3 organization migration.
 - **README Title:** Added a Markdown H1 so the README title matches the manifest name.
+- **Release Assets:** GitHub releases now attach only the files Obsidian supports: `main.js`, `manifest.json`, and `styles.css`. `LICENSE` and `THIRD_PARTY_NOTICES.md` remain in the repository and in the tagged source.
+- **Source Review Dependencies:** Restored `package-lock.json`, regenerated from the current `package.json`, so the community review scanner can install dependencies and complete build verification. pnpm remains the source of truth for local development and CI.
+- **Minimum Obsidian Version:** Raised `minAppVersion` from `1.4.0` to `1.7.2` to match APIs the plugin already uses (the `revealLeaf` calls that open the dashboard require 1.7.2). The plugin declared support for versions where opening the dashboard could fail.
+- **Reproducible Typings:** Pinned `obsidian` to `1.8.7` instead of a caret range. The caret resolved to 1.14.4 under npm, whose declarative-settings typings do not match this release's settings implementation and broke the source-review build.
 
 ### Added
-- **Third-Party Notices:** Added [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) documenting the licenses of dependencies bundled into `main.js`, including the Apache-2.0 attribution requirements for `pouchdb-browser`. Ships alongside `LICENSE` in release artifacts.
+- **Third-Party Notices:** Added [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) documenting the licenses of dependencies bundled into `main.js`, including the Apache-2.0 attribution requirements for `pouchdb-browser`. Lives in the repository alongside `LICENSE`; release assets are limited to the files Obsidian supports.
 - **License Terms in Contributing Guide:** Documented inbound contribution licensing under [`CONTRIBUTING.md`](CONTRIBUTING.md) (MIT, no separate CLA).
 - **License Row in Settings:** Added a license setting with a link to the license text to the About tab.
 
 ### Documentation
 - **Privacy and Network Access:** Documented vault access, local storage, the optional CouchDB connection, and the two external links opened from the settings tab in the README.
+- **Scanner Disclosures:** Documented the Vault Enumeration and Local Storage disclosures in the README: indexing Markdown notes requires enumerating their paths, and PouchDB's `localStorage` use is limited to a capability probe and a cross-tab change marker. Neither stores vault content or review data.
 - **Completed Design Plans:** Moved the in-place image occlusion plan to [`docs/plans/done/`](docs/plans/done/) with `Status: Done`, repointed the stale legacy-org issue link to the `Fundaments-Work` org, and revised the plan to describe the shipped implementation (the `isInPlaceImageCard` helper, type-in exclusion, `Space`/`P`/`F` peek shortcuts, and the final CSS and test coverage).
 - **Stale Documentation Corrections:** [`DESIGN.md`](DESIGN.md) listed 8 of the 15 registered commands and omitted the `editor-menu` event, and [`PROJECT_STATUS.md`](PROJECT_STATUS.md) still tracked Stats v2 as incomplete and led its priority list with it, despite the retention curve, maturity doughnut, 12-month heatmap, interval histogram, and per-deck breakdown all shipping in [`StatsModal`](src/ui/StatsModal.ts). Corrected the command and event tables, documented the 350ms file-batching versus 500ms dashboard debounce windows, and added the shipped type-in and in-place occlusion behaviour to the `ReviewModal` section.
 
