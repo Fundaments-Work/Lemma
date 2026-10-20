@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-10-20
+
+This release fixes several problems that made progress look lost, and adds undo, backup and card import. It was tested against data written by 1.1.5, including a copy of a real Obsidian database, and no existing data is moved, renamed or deleted.
+
+### Compatibility
+- **Your earlier progress comes back.** Versions up to 1.1.5 saved schedules and review history to the local database but could not read them back after a restart, so cards looked new and statistics looked empty. 1.2.0 loads everything that was saved. Cards you had rated show their schedules again, and the statistics show your full history.
+- **Existing installs keep the database name `lemma_local`.** Obsidian gives all vaults one shared browser storage, so a vault installed fresh now gets its own database, `lemma_local_` plus a vault identifier, stored in `data.json` before the first save. Nothing is migrated or renamed for existing installs.
+
+### Added
+- **Undo last rating:** The review window has an undo icon and a `Z` key. Undo restores the card's previous schedule, removes the rating from history and statistics, and restores streak and XP counters, in both storage modes. It can be repeated back to the start of the window.
+- **Learning cards return in the same session:** A card rated Again, or a new card rated Hard or Good, comes back a few cards later when its short step is due within 30 minutes.
+- **Backup and restore:** **Export review data (backup)** writes schedules, review history and streak data to a JSON file in the vault. **Import review data from backup** merges a backup, or a `data.json` file from any version, keeping the more recently reviewed version of each card and never duplicating reviews.
+- **Import cards from file:** Converts a plain text export from another flashcard app, or a CSV, TSV or semicolon separated file, into a deck note. It handles quoted multi-line fields, cloze notes, HTML, block IDs and text containing `::`.
+- **User guide page:** [Backup and import](docs/user/backup-and-import.md).
+
+### Fixed
+- **Schedules not loading after a restart:** `getAllCardStates()` read only document IDs starting with `fsrs-`, but card IDs are `deckId::blockId` or a bare hash. The query now reads every document outside the review-log range and filters by document type, so current and legacy IDs both load.
+- **Review history not loading after a restart:** `getReviewHistory()` passed its keys in the wrong order for a descending query and returned nothing. History feeds statistics, the activity chart and the daily limits.
+- **Renaming or moving a deck note:** Inside Obsidian, each card's schedule and history now move to the card's new ID, in memory and in the database. Previously every card restarted as new. A rename made outside Obsidian is still seen as a delete and a create.
+- **Whole-note review rename:** Renaming a `#review` note keeps its schedule and no longer leaves a stale entry for the old path in the due list.
+- **Schedules lost on note edit:** Editing a deck note no longer drops the in-memory schedules of its cards (in JSON storage mode the loss was then saved to `data.json`).
+- **7-day forecast and Due this week:** Cards are counted on the day they are due for the next seven days, with overdue cards in today's bar. The old calculation discarded nearly every card, so both read zero.
+- **Review window card info:** The title notice and the "Edit this card" pencil follow the card on screen instead of always showing the first card.
+- **Daily new-card limit:** The limit now subtracts the cards in the deck whose first rating was today, so later sessions the same day no longer offer a fresh batch.
+- **Same-day learning cards:** Cards rated today are no longer excluded from deck queues, so a card in a short step is offered again once it is due.
+- **Duplicate data in data.json:** With PouchDB storage on, changing a setting no longer writes schedules and review history into `data.json`.
+- **Review shortcuts did nothing:** The review, note review and browse windows registered the literal key name `keydown`, which matches no key. Space, Enter, `1` to `4` and the arrow keys now work, and keys are ignored while typing in an answer box. Found by testing in Obsidian 1.14.
+- **Edit pencil missing:** Obsidian 1.14 has no `.modal-header-controls` element, so the pencil never appeared. Header buttons now render with or without it.
+- **Short cards rendered as a thin column:** The review card now takes the full width, up to 600 px.
+
+### Performance
+- Indexing a note with thousands of cards is about 7 times faster (6,000 cards: 2.2 s to 0.3 s).
+- Building study queues no longer rescans the whole review history per deck, and **Study all due** no longer de-duplicates with a quadratic search (200,000 logged reviews: 493 ms to 35 ms).
+- Rating a card no longer rescans the whole review history (about 50 times faster with 200,000 logged reviews).
+
+### Changed
+- When a study queue is empty because the daily limits are used up, the notice says so and points to cram.
+- The new-card setting description reads "Applies to each deck separately", matching the behavior and the README.
+- Obsidian plugin guideline compliance: appending a card to a closed note uses `Vault.process`, user-supplied paths go through `normalizePath`, the card font size uses a CSS variable instead of an inline style, promise chains are written with async/await, and the console shows only errors by default.
+- Documentation: new Backup and import page, updated guides for reviewing, scheduling, migrating, sync and data, troubleshooting, commands and the README privacy section; corrected `:::` in the flashcard guide (one reversed card, not two), FSRS-5 with ts-fsrs 4.7.1 in the status and design pages, and the stale examples in `data.example.json`.
+- The release workflow no longer runs `scripts/check-content.mjs`, which was removed earlier and would have failed the release.
+- Development: tests run against a real PouchDB on `fake-indexeddb`, a `jsdom` review window, and a verbatim copy of the 1.1.5 database writer (`fake-indexeddb` and `jsdom` are dev dependencies). CONTRIBUTING explains how to test in a disposable Obsidian profile.
+
 ## [1.1.5] - 2026-10-20
 
 ### Fixed

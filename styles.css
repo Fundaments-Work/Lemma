@@ -74,6 +74,21 @@ svg.lemma-icon rect {
     gap: var(--size-4-2);
 }
 
+.fsrs-review-modal-immersive .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--size-4-2);
+}
+
+.fsrs-review-modal-immersive .fsrs-header-actions {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: var(--size-4-2);
+    margin-right: var(--size-4-8);
+}
+
 .fsrs-counter-badge {
     display: inline-block;
     padding: 2px 8px;
@@ -449,11 +464,13 @@ svg.lemma-icon rect {
 /* ── Review layout ── */
 
 .fsrs-review-card {
+    font-size: var(--fsrs-card-font-size, var(--font-text-size));
     border: 1px solid var(--background-modifier-border);
     border-radius: var(--radius-m);
     background-color: var(--background-primary);
     padding: var(--size-4-4);
     margin: var(--size-4-4) auto;
+    width: 100%;
     max-width: 600px;
     flex: 1 1 auto;
     overflow-y: auto;

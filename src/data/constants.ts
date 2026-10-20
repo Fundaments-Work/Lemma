@@ -129,6 +129,16 @@ export function buildAuthenticatedUrl(url: string, dbName: string, username: str
     }
 }
 
+export const LEGACY_DATABASE_NAME = 'lemma_local';
+
+// Every vault shares one IndexedDB origin, so installs that predate per-vault names must keep
+// the shared name forever; only a vault with no saved data gets a name scoped to itself.
+export function resolveDatabaseName(savedName: string | undefined, hasSavedData: boolean, vaultKey: string): string {
+    if (typeof savedName === 'string' && savedName.trim()) return savedName;
+    if (hasSavedData) return LEGACY_DATABASE_NAME;
+    return `${LEGACY_DATABASE_NAME}_${cyrb53hex(vaultKey)}`;
+}
+
 export function generateBlockId(length: number = 6): string {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';

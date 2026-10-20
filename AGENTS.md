@@ -4,12 +4,11 @@
 
 ```bash
 npm ci
-npm test              # vitest test suite (46 tests)
+npm test              # vitest test suite (83 tests)
 npm run build         # typecheck + bundle
 npm run lint          # eslint with eslint-plugin-obsidianmd
 npm run lint:fix      # auto-fix lint
 npm run dev           # dev mode (watch, sourcemaps)
-npm run check:content # Buy Me Momo URL vs Fundaments-Work/content
 node deploy.mjs <vault-path>   # copy built files to vault
 ```
 
@@ -32,16 +31,12 @@ here: change them in the source repo, never here.
   are deliberate literals — Obsidian reads `manifest.json` straight off disk and
   the rest ship as built artifacts, so none of them can depend on a sibling repo
   at build time without adding real fragility to the release pipeline.
-- `npm run check:content` collects every Buy Me Momo URL in those files, compares
-  the set against the canonical one, and fails on drift. It runs in
-  `.github/workflows/release.yml` before the build, so a stale URL cannot ship.
+- The old `check:content` script and its release-workflow step were removed (commit
+  `b2fb66e`), so nothing verifies the four literals automatically. Check them by hand
+  against `support.json` before changing any of them.
 - **To change the link: change `content/support.json` first**, push it, then
   update the literals here. Fixing only this repo leaves both landing sites and
   Theorem advertising a dead URL.
-- The check needs the content repo or the network. It resolves a sibling
-  checkout (`../content`), then `--from <path>` / `CONTENT_DIR`, then
-  `raw.githubusercontent`. It is a script rather than a vitest case on purpose:
-  `npm test` stays hermetic and offline-capable.
 
 ### `Fundaments-Work/design-system` — visual language
 
@@ -162,16 +157,15 @@ Use the 4-tab pattern from `FSRSSettingsTab`:
 ## Testing
 
 Validate by:
-1. `npm test` (Vitest: 46 tests covering card parsing, data manager, and image occlusion)
+1. `npm test` (Vitest: 83 tests covering card parsing, data manager, image occlusion, PouchDB persistence, renames, scheduling, undo, backup, import, 1.1.5 data compatibility and the review window)
 2. `npm run lint` (ESLint: strict Obsidian plugin rules, zero warnings/errors required)
 3. `npm run build` (TypeScript check + esbuild production bundle)
-4. `npm run check:content` (Buy Me Momo URL matches `Fundaments-Work/content`)
-5. `node deploy.mjs <vault-path>` (deploy to test vault)
+4. `node deploy.mjs <vault-path>` (deploy to test vault)
 
 ## Release
 
 Pushing a semver tag without `v` prefix (e.g. `1.1.3`) triggers `.github/workflows/release.yml`:
-Validates semver -> checks manifest version -> lints -> builds -> creates GitHub release with `main.js`, `manifest.json`, `styles.css`.
+Validates semver -> checks manifest version -> installs with `npm ci` -> audits production dependencies -> tests -> lints -> builds -> attests -> creates GitHub release with `main.js`, `manifest.json`, `styles.css`.
 
 The release workflow and the community review scanner both install with `npm ci` and build with npm. `package-lock.json` is the only committed lockfile, so the scanner uses its frozen npm path instead of the pnpm fallback.
 

@@ -259,7 +259,7 @@ Reversed Question:::Reversed Answer ^block-id
 ```
 
 - `::` creates a standard flashcard (prompt front, reveal back).
-- `:::` creates a bidirectional / reversed card (prompts back, tests front) for two-way recall like vocabulary.
+- `:::` creates one reversed card (prompts the back, tests the front). For two-way recall such as vocabulary, write a `::` line and a `:::` line, each with its own block ID.
 - An optional `^block-id` stabilizes card history.
 
 ### Examples

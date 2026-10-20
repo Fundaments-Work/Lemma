@@ -1,18 +1,18 @@
 # Lemma — Project status
 
-## Current state (v1.1.5)
+## Current state (v1.2.0)
 
 All core features are implemented and functional:
 
 ### Phase 1 — Foundation (completed)
 - [x] Modular code structure (`src/data/`, `src/ui/`, `src/plugin/`)
-- [x] Test suite — Vitest, 46 tests, Obsidian + PouchDB mocks
+- [x] Test suite — Vitest, 83 tests, Obsidian mocks and a real PouchDB on `fake-indexeddb`
 - [x] Single-line card syntax (`Q::A` basic, `Q:::A` reversed)
 - [x] Stable block IDs for single-line cards (`^blockId` suffix)
 - [x] Whole-note review (`#review` tag system)
 - [x] Daily review limits with cross-session load balancing
 - [x] Card context breadcrumbs (heading hierarchy displayed in review)
-- [x] FSRS 4.5 scheduling (ts-fsrs)
+- [x] FSRS-5 scheduling (ts-fsrs 4.7.1, 19-weight default parameter set)
 - [x] Basic card format (`---card---`)
 - [x] Cloze deletion format (`==c1::text==`)
 - [x] Dashboard with deck list, folder grouping, stat pills
@@ -47,11 +47,13 @@ All core features are implemented and functional:
 - [x] Licensing: copyright attribution corrected to Fundaments Work (2025-2026), `THIRD_PARTY_NOTICES.md` added for bundled dependencies, contribution terms documented, license row added to the settings About tab
 - [x] Security hardening: CouchDB credentials kept out of replicated sync metadata, credential redaction in status output, insecure HTTP warning, production dependency audit in CI, and community review disclosures for vault, storage, and network access
 - [x] Community review compliance: release assets limited to `main.js`, `manifest.json`, and `styles.css`; `package-lock.json` restored with all `resolved` URLs on the public npm registry and `.npmrc` pinning that registry; `skipLibCheck` enabled for the scanner's standalone `tsc` run; the pnpm lockfile was removed so the scanner selects `npm ci`, and release builds use npm; `obsidian` typings pinned to 1.8.7; `minAppVersion` raised to 1.7.2 to match the APIs already in use; scanner disclosures documented
+- [x] Undo last rating, same-session requeue of learning cards, JSON backup and merge-import, Anki text and CSV card import (v1.2.0)
+- [x] Vault-scoped database name for new installs, with existing installs keeping `lemma_local` (v1.2.0)
 - [ ] Per-deck settings overrides
 
 ### Phase 3 — Polish (planned)
 - [ ] Declarative settings API (`getSettingDefinitions`) migration to replace the deprecated `display()` method on Obsidian 1.13+
-- [ ] Data export/import (JSON backup/restore)
+- [x] Data export/import (JSON backup/restore, v1.2.0)
 - [ ] i18n framework for community translations
 - [ ] Plugin API for external card creation
 - [ ] Enhanced sync (conflict resolution, status indicator)
@@ -74,7 +76,8 @@ All core features are implemented and functional:
 
 1. **Per-deck settings** — per-deck new/review limits & desired retention overrides
 2. **PouchDB write batching** — batch review logs to reduce IndexedDB write cycles
-3. **Data export/import** — JSON/Anki package backup and restore
+3. **Anki package (.apkg) import** — scheduling data and media; JSON backup and text/CSV import shipped in 1.2.0
+   **Suspend, bury and leech handling** — needs a card-state model
 4. **i18n** — extract UI strings for community translation
 
 ## Long-term possibilities

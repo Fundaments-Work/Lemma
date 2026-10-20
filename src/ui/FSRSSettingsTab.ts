@@ -96,7 +96,7 @@ export class FSRSSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Max new cards per day')
-            .setDesc('Applies to all decks.')
+            .setDesc('Applies to each deck separately.')
             .addText((text) => text
                 .setValue(this.plugin.settings.newCardsPerDay.toString())
                 .onChange(async (value) => {
@@ -336,7 +336,7 @@ export class FSRSSettingsTab extends PluginSettingTab {
                 .setButtonText('Buy me a momo')
                 .setCta()
                 .onClick(() => {
-                    window.open('https://buymemomo.com/usefundaments', '_blank');
+                    activeWindow.open('https://buymemomo.com/usefundaments', '_blank');
                 }));
 
         new Setting(containerEl)
@@ -355,7 +355,7 @@ export class FSRSSettingsTab extends PluginSettingTab {
             .addButton((btn) => btn
                 .setButtonText('Open repository')
                 .onClick(() => {
-                    window.open('https://github.com/Fundaments-Work/Lemma', '_blank');
+                    activeWindow.open('https://github.com/Fundaments-Work/Lemma', '_blank');
                 }));
 
         new Setting(containerEl)
@@ -364,7 +364,7 @@ export class FSRSSettingsTab extends PluginSettingTab {
             .addButton((btn) => btn
                 .setButtonText('View license')
                 .onClick(() => {
-                    window.open('https://github.com/Fundaments-Work/Lemma/blob/main/LICENSE', '_blank');
+                    activeWindow.open('https://github.com/Fundaments-Work/Lemma/blob/main/LICENSE', '_blank');
                 }));
 
         new Setting(containerEl).setName('Quick card cheatsheet').setHeading();

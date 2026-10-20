@@ -31,7 +31,9 @@ export class BrowseModal extends Modal {
         this.titleEl.setText(`Browsing: ${this.deckName}`);
         this.setupUI();
         void this.displayCurrentCard();
-        this.scope.register([], 'keydown', (evt: KeyboardEvent) => this.handleKeyPress(evt));
+        for (const key of ['ArrowLeft', 'ArrowRight']) {
+            this.scope.register([], key, (evt: KeyboardEvent) => this.handleKeyPress(evt));
+        }
     }
 
     private setupUI() {
@@ -48,7 +50,7 @@ export class BrowseModal extends Modal {
         cardWrapper.addClass('fsrs-browse-card-wrapper');
 
         this.cardContainer = cardWrapper.createDiv({ cls: 'fsrs-review-card' });
-        this.cardContainer.style.setProperty('font-size', `${this.plugin.settings.fontSize}px`);
+        this.cardContainer.setCssProps({ '--fsrs-card-font-size': `${this.plugin.settings.fontSize}px` });
         this.frontEl = this.cardContainer.createDiv({ cls: 'fsrs-card-front' });
         this.answerContainer = this.cardContainer.createDiv({ cls: 'fsrs-card-answer' });
         this.answerContainer.createEl('hr');

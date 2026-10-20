@@ -233,8 +233,7 @@ export class CreateCardModal extends Modal {
             const cursor = activeEditor.getCursor();
             activeEditor.replaceRange(`\n${cardMarkdown}\n`, cursor);
         } else {
-            const existing = await this.app.vault.read(this.targetFile);
-            await this.app.vault.modify(this.targetFile, `${existing.trimEnd()}\n\n${cardMarkdown}\n`);
+            await this.app.vault.process(this.targetFile, (existing) => `${existing.trimEnd()}\n\n${cardMarkdown}\n`);
         }
 
         new Notice(`Card added to ${this.targetFile.basename}`);

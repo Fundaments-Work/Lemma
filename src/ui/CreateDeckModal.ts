@@ -1,4 +1,4 @@
-import { App, Modal, Setting, Notice } from 'obsidian';
+import { App, Modal, Setting, Notice, normalizePath } from 'obsidian';
 
 type FSRSFlashcardsPlugin = import('../plugin/main').FSRSFlashcardsPlugin;
 
@@ -60,12 +60,13 @@ export class CreateDeckModal extends Modal {
         let fullPath = cleanName.endsWith('.md') ? cleanName : `${cleanName}.md`;
 
         if (this.folderPath) {
-            const cleanFolder = this.folderPath.replace(/^\/+|\/+$/g, '');
+            const cleanFolder = normalizePath(this.folderPath);
             if (!this.app.vault.getAbstractFileByPath(cleanFolder)) {
                 await this.app.vault.createFolder(cleanFolder);
             }
             fullPath = `${cleanFolder}/${fullPath}`;
         }
+        fullPath = normalizePath(fullPath);
 
         const existing = this.app.vault.getAbstractFileByPath(fullPath);
         if (existing) {

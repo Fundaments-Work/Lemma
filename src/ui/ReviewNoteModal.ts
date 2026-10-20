@@ -23,7 +23,9 @@ export class ReviewNoteModal extends Modal {
         this.contentEl.empty();
         this.setupUI();
         void this.showCurrentNote();
-        this.scope.register([], 'keydown', (evt: KeyboardEvent) => this.handleKeyPress(evt));
+        for (const key of ['1', '2', '3', '4']) {
+            this.scope.register([], key, (evt: KeyboardEvent) => this.handleKeyPress(evt));
+        }
     }
 
     onClose() {

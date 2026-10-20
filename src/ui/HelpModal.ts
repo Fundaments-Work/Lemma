@@ -44,6 +44,7 @@ export class HelpModal extends Modal {
             ['2', 'Hard'],
             ['3', 'Good'],
             ['4', 'Easy'],
+            ['Z', 'Undo the last rating'],
             ['Esc', 'Exit review session'],
         ]);
 

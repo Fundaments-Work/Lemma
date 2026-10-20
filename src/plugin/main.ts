@@ -1,25 +1,28 @@
 import { Editor, Notice, Plugin, TFile, addIcon, debounce, setIcon } from 'obsidian';
 import { DataManager } from '../data/DataManager';
-import { VIEW_TYPE_DASHBOARD, VIEW_ICON_NAME, STATUS_ICON_NAME, DEFAULT_SETTINGS, generateBlockId, getDocCount, LEMMA_ICON_ID, LEMMA_ICON_SVG, sanitizeUrlForDisplay } from '../data/constants';
+import { VIEW_TYPE_DASHBOARD, VIEW_ICON_NAME, STATUS_ICON_NAME, DEFAULT_SETTINGS, generateBlockId, resolveDatabaseName, getErrorMessage, getDocCount, LEMMA_ICON_ID, LEMMA_ICON_SVG, sanitizeUrlForDisplay } from '../data/constants';
 import type { FSRSSettings, PluginData } from '../data/types';
 import { DashboardView } from '../ui/DashboardView';
 import { FSRSSettingsTab } from '../ui/FSRSSettingsTab';
 import { ResetProgressModal } from '../ui/ResetProgressModal';
 import { CreateCardModal } from '../ui/CreateCardModal';
 import { CreateDeckModal } from '../ui/CreateDeckModal';
+import { ImportBackupModal } from '../ui/ImportBackupModal';
+import { ImportCardsModal } from '../ui/ImportCardsModal';
 
 class FSRSFlashcardsPlugin extends Plugin {
     settings: FSRSSettings;
     dataManager: DataManager;
+    private databaseNameIsNew = false;
 
     async onload() {
-        console.debug('Loading Lemma plugin');
         addIcon(LEMMA_ICON_ID, LEMMA_ICON_SVG);
         await this.loadSettings();
         this.dataManager = new DataManager(this);
 
         this.app.workspace.onLayoutReady(async () => {
             await this.dataManager.load();
+            if (this.databaseNameIsNew) await this.saveSettings();
 
             await this.dataManager.initializeSync();
 
@@ -225,6 +228,42 @@ class FSRSFlashcardsPlugin extends Plugin {
         });
 
         this.addCommand({
+            id: 'import-cards',
+            name: 'Import cards from file',
+            callback: () => {
+                new ImportCardsModal(this.app, this).open();
+            },
+        });
+
+        this.addCommand({
+            id: 'export-review-data',
+            name: 'Export review data (backup)',
+            callback: async () => {
+                if (!this.dataManager.isDataLoaded()) {
+                    new Notice('Lemma is still loading. Try again in a moment.');
+                    return;
+                }
+                const now = new Date();
+                const pad = (n: number) => String(n).padStart(2, '0');
+                const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}-${pad(now.getMinutes())}`;
+                try {
+                    const file = await this.app.vault.create(`Lemma backup ${stamp}.json`, this.dataManager.exportBackup());
+                    new Notice(`Backup saved to ${file.path}`, 8000);
+                } catch (error: unknown) {
+                    new Notice(`Backup failed: ${getErrorMessage(error)}`, 8000);
+                }
+            },
+        });
+
+        this.addCommand({
+            id: 'import-review-data',
+            name: 'Import review data from backup',
+            callback: () => {
+                new ImportBackupModal(this.app, this).open();
+            },
+        });
+
+        this.addCommand({
             id: 'reset-all-card-progress',
             name: 'Reset all card progress (nuclear option)',
             callback: async () => {
@@ -296,11 +335,14 @@ class FSRSFlashcardsPlugin extends Plugin {
         }));
         this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
             if (file instanceof TFile && (file.extension === 'md' || oldPath.endsWith('.md'))) {
-                void this.dataManager.renameDeck(file, oldPath).then(() => {
-                    debouncedRefresh();
-                }).catch((e: unknown) => {
-                    console.error('Failed to rename deck:', e);
-                });
+                void (async () => {
+                    try {
+                        await this.dataManager.renameDeck(file, oldPath);
+                        debouncedRefresh();
+                    } catch (e: unknown) {
+                        console.error('Failed to rename deck:', e);
+                    }
+                })();
             }
         }));
 
@@ -308,23 +350,27 @@ class FSRSFlashcardsPlugin extends Plugin {
     }
 
     onunload() {
-        void this.dataManager.stopSync().catch((error: unknown) => {
-            console.error('Failed to stop sync during unload:', error);
-        });
+        void (async () => {
+            try {
+                await this.dataManager.stopSync();
+            } catch (error: unknown) {
+                console.error('Failed to stop sync during unload:', error);
+            }
+        })();
     }
 
     async loadSettings() {
         const data = (await this.loadData()) as PluginData | null;
         this.settings = Object.assign({}, DEFAULT_SETTINGS, data?.settings);
         this.settings.fsrsParams = Object.assign({}, DEFAULT_SETTINGS.fsrsParams, this.settings.fsrsParams);
+        this.databaseNameIsNew = !data?.settings?.databaseName;
+        const appId = (this.app as unknown as { appId?: unknown }).appId;
+        const vaultKey = typeof appId === 'string' && appId ? appId : this.app.vault.getName();
+        this.settings.databaseName = resolveDatabaseName(data?.settings?.databaseName, data !== null, vaultKey);
     }
 
     async saveSettings() {
-        await this.saveData({
-            settings: this.settings,
-            cardData: this.dataManager['fsrsDataStore'] || {},
-            reviewHistory: this.dataManager['reviewHistory'] || [],
-        });
+        await this.dataManager.save();
     }
 
     async activateView() {

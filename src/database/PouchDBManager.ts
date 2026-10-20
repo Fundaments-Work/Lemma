@@ -206,27 +206,34 @@ export class PouchDBManager {
 
     async getAllCardStates(): Promise<Record<string, FSRSCard>> {
         try {
-            const result = await this.db.allDocs<CardStateDoc>({
-                include_docs: true,
-                startkey: 'fsrs-',
-                endkey: 'fsrs-\ufff0'
-            });
-
+            // Card IDs have no fixed prefix (deckId::blockId, a bare hash, or legacy fsrs-*),
+            // so read everything except the review log range and filter by document type.
+            const ranges = [
+                { endkey: 'review_', inclusive_end: false },
+                { startkey: 'review_\ufff0' }
+            ];
             const cardStates: Record<string, FSRSCard> = {};
 
-            for (const row of result.rows) {
-                if (row.doc && row.doc.type === 'card_state') {
-                    cardStates[row.doc.cardId] = {
-                        due: new Date(row.doc.due),
-                        stability: row.doc.stability,
-                        difficulty: row.doc.difficulty,
-                        elapsed_days: row.doc.elapsed_days,
-                        scheduled_days: row.doc.scheduled_days,
-                        reps: row.doc.reps,
-                        lapses: row.doc.lapses,
-                        state: row.doc.state,
-                        last_review: row.doc.last_review ? new Date(row.doc.last_review) : undefined
-                    };
+            for (const range of ranges) {
+                const result = await this.db.allDocs<CardStateDoc>({
+                    include_docs: true,
+                    ...range
+                });
+
+                for (const row of result.rows) {
+                    if (row.doc && row.doc.type === 'card_state') {
+                        cardStates[row.doc.cardId] = {
+                            due: new Date(row.doc.due),
+                            stability: row.doc.stability,
+                            difficulty: row.doc.difficulty,
+                            elapsed_days: row.doc.elapsed_days,
+                            scheduled_days: row.doc.scheduled_days,
+                            reps: row.doc.reps,
+                            lapses: row.doc.lapses,
+                            state: row.doc.state,
+                            last_review: row.doc.last_review ? new Date(row.doc.last_review) : undefined
+                        };
+                    }
                 }
             }
 
@@ -245,6 +252,62 @@ export class PouchDBManager {
             if (getErrorStatus(err) !== 404) {
                 throw err;
             }
+        }
+    }
+
+    async rekeyCards(renames: Array<{ oldId: string; newId: string; deckId: string; filePath: string }>): Promise<void> {
+        const byOldId = new Map(renames.map((r) => [r.oldId, r]));
+
+        for (const { oldId, newId, deckId, filePath } of renames) {
+            let oldDoc: CardStateDoc;
+            try {
+                oldDoc = await this.db.get<CardStateDoc>(oldId);
+            } catch (err: unknown) {
+                if (getErrorStatus(err) === 404) continue;
+                throw err;
+            }
+
+            let newRev: string | undefined;
+            try {
+                newRev = (await this.db.get(newId))._rev;
+            } catch (err: unknown) {
+                if (getErrorStatus(err) !== 404) throw err;
+            }
+
+            await this.db.put({
+                ...oldDoc,
+                _id: newId,
+                _rev: newRev,
+                cardId: newId,
+                deckId,
+                filePath,
+                updated_at: new Date().toISOString()
+            });
+            await this.db.remove(oldDoc._id, oldDoc._rev as string);
+        }
+
+        const logs = await this.db.allDocs<ReviewLogDoc>({
+            include_docs: true,
+            startkey: 'review_',
+            endkey: 'review_\ufff0'
+        });
+        const writes: Array<ReviewLogDoc | { _id: string; _rev: string; _deleted: true }> = [];
+        for (const row of logs.rows) {
+            const doc = row.doc;
+            const rename = doc && doc.type === 'review_log' ? byOldId.get(doc.cardId) : undefined;
+            if (!doc || !rename) continue;
+            writes.push({
+                _id: `review_${doc.timestamp}_${rename.newId}`,
+                type: 'review_log',
+                cardId: rename.newId,
+                timestamp: doc.timestamp,
+                rating: doc.rating,
+                created_at: doc.created_at
+            });
+            writes.push({ _id: doc._id, _rev: doc._rev, _deleted: true });
+        }
+        if (writes.length > 0) {
+            await this.db.bulkDocs(writes);
         }
     }
 
@@ -268,12 +331,64 @@ export class PouchDBManager {
         }
     }
 
+    async importData(
+        states: Array<{ cardId: string; deckId: string; filePath: string; fsrs: FSRSCard }>,
+        logs: Array<{ cardId: string; timestamp: number; rating: Rating }>
+    ): Promise<void> {
+        const now = new Date().toISOString();
+        const existing = await this.db.allDocs({ keys: states.map((s) => s.cardId) });
+        const revs = new Map<string, string>();
+        for (const row of existing.rows) {
+            if ('value' in row && row.value && !('deleted' in row.value && row.value.deleted)) revs.set(row.key, row.value.rev);
+        }
+
+        const docs: Array<CardStateDoc | ReviewLogDoc> = states.map(({ cardId, deckId, filePath, fsrs }) => ({
+            _id: cardId,
+            _rev: revs.get(cardId),
+            type: 'card_state',
+            cardId,
+            deckId,
+            filePath,
+            due: fsrs.due.toISOString(),
+            stability: fsrs.stability,
+            difficulty: fsrs.difficulty,
+            elapsed_days: fsrs.elapsed_days,
+            scheduled_days: fsrs.scheduled_days,
+            reps: fsrs.reps,
+            lapses: fsrs.lapses,
+            state: fsrs.state,
+            last_review: fsrs.last_review?.toISOString(),
+            created_at: now,
+            updated_at: now
+        }));
+        for (const log of logs) {
+            docs.push({
+                _id: `review_${log.timestamp}_${log.cardId}`,
+                type: 'review_log',
+                cardId: log.cardId,
+                timestamp: log.timestamp,
+                rating: log.rating,
+                created_at: now
+            });
+        }
+        if (docs.length > 0) await this.db.bulkDocs(docs);
+    }
+
+    async deleteReviewLog(cardId: string, timestamp: number): Promise<void> {
+        try {
+            const doc = await this.db.get(`review_${timestamp}_${cardId}`);
+            await this.db.remove(doc);
+        } catch (err: unknown) {
+            if (getErrorStatus(err) !== 404) throw err;
+        }
+    }
+
     async getReviewHistory(limit?: number): Promise<Array<{ cardId: string; timestamp: number; rating: Rating }>> {
         try {
             const result = await this.db.allDocs<ReviewLogDoc>({
                 include_docs: true,
-                startkey: 'review_',
-                endkey: 'review_\ufff0',
+                startkey: 'review_\ufff0',
+                endkey: 'review_',
                 limit,
                 descending: true
             });
@@ -537,25 +652,27 @@ export class PouchDBManager {
                     .on('complete', (info: unknown) => {
                         console.debug('Manual sync complete:', info);
                         void (async () => {
-                            this.syncing = false;
-
-                            // Update last sync time
                             try {
-                                const syncMeta = await this.db.get<SyncMetaDoc>('sync_meta');
-                                syncMeta.lastSyncTime = new Date().toISOString();
-                                await this.db.put(syncMeta);
-                            } catch (err: unknown) {
-                                console.error('Failed to update sync time:', err);
-                            }
+                                this.syncing = false;
 
-                            if (this.syncEventHandlers.onComplete) {
-                                this.syncEventHandlers.onComplete(info);
+                                // Update last sync time
+                                try {
+                                    const syncMeta = await this.db.get<SyncMetaDoc>('sync_meta');
+                                    syncMeta.lastSyncTime = new Date().toISOString();
+                                    await this.db.put(syncMeta);
+                                } catch (err: unknown) {
+                                    console.error('Failed to update sync time:', err);
+                                }
+
+                                if (this.syncEventHandlers.onComplete) {
+                                    this.syncEventHandlers.onComplete(info);
+                                }
+                                resolve();
+                            } catch (err: unknown) {
+                                this.syncing = false;
+                                reject(toError(err));
                             }
-                            resolve();
-                        })().catch((err: unknown) => {
-                            this.syncing = false;
-                            reject(toError(err));
-                        });
+                        })();
                     })
                     .on('error', (err: unknown) => {
                         console.error('Manual sync error:', err);
@@ -629,6 +746,14 @@ export class PouchDBManager {
 
     async compact(): Promise<void> {
         await this.db.compact();
+    }
+
+    async close(): Promise<void> {
+        if (this.syncHandler) {
+            this.syncHandler.cancel();
+            this.syncHandler = null;
+        }
+        await this.db.close();
     }
 
     async destroy(): Promise<void> {

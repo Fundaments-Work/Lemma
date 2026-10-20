@@ -27,6 +27,7 @@ export interface FSRSSettings {
     syncUsername: string;
     syncPassword: string;
     usePouchDB: boolean;
+    databaseName?: string;
     gamification: Gamification;
 }
 

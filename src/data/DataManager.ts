@@ -1,8 +1,9 @@
 import { FSRS, Rating, State, createEmptyCard, type Card as FSRSCard } from 'ts-fsrs';
 import { Notice, TFile, type CachedMetadata } from 'obsidian';
 import type { Card, Deck, FSRSData, FSRSParameters, Gamification, NoteReviewData, PluginData, ReviewLog } from './types';
-import { isRecord, cyrb53hex, getDocsWritten, getErrorMessage, isLikelyCorsOrNetworkErrorMessage, buildAuthenticatedUrl, sanitizeUrlForDisplay } from './constants';
+import { isRecord, cyrb53hex, LEGACY_DATABASE_NAME, getDocsWritten, getErrorMessage, isLikelyCorsOrNetworkErrorMessage, buildAuthenticatedUrl, sanitizeUrlForDisplay } from './constants';
 import { PouchDBManager } from '../database/PouchDBManager';
+import { buildBackup, type BackupContent } from './backup';
 
 type FSRSFlashcardsPlugin = import('../plugin/main').FSRSFlashcardsPlugin;
 
@@ -18,13 +19,30 @@ export class DataManager {
     private migrationCompleted: boolean = false;
     private isLoaded: boolean = false;
     private fileMtimes: Map<string, number> = new Map();
+    private lineStartsCache: { content: string; starts: number[] } | null = null;
+    private firstReviewAt: Map<string, number> | null = null;
+    private undoStack: Array<{ card: Card; previous: FSRSData | undefined; timestamp: number; gamification: Gamification }> = [];
 
     constructor(plugin: FSRSFlashcardsPlugin) {
         this.plugin = plugin;
         this.fsrs = new FSRS(plugin.settings.fsrsParams);
         if (plugin.settings.usePouchDB) {
-            this.pouchDB = new PouchDBManager('lemma_local');
+            this.pouchDB = new PouchDBManager(this.databaseName());
         }
+    }
+
+    private runInBackground(task: () => Promise<unknown> | undefined, message: string): void {
+        void (async () => {
+            try {
+                await task();
+            } catch (error: unknown) {
+                console.error(message, error);
+            }
+        })();
+    }
+
+    private databaseName(): string {
+        return this.plugin.settings.databaseName || LEGACY_DATABASE_NAME;
     }
 
     getPouchDB(): PouchDBManager | null {
@@ -63,9 +81,7 @@ export class DataManager {
 
                     if (isLikelyCorsOrNetworkErrorMessage(message)) {
                         new Notice('Sync stopped. Check cors settings and sync URL.', 7000);
-                        void this.pouchDB?.stopSync().catch((stopError: unknown) => {
-                            console.error('Failed to stop sync after network/CORS error:', stopError);
-                        });
+                        this.runInBackground(() => this.pouchDB?.stopSync(), 'Failed to stop sync after network/CORS error:');
                     }
                 });
 
@@ -75,7 +91,7 @@ export class DataManager {
 
                 this.pouchDB.onSyncPaused((err) => {
                     if (err) {
-                        console.warn('Sync paused with error:', err);
+                        console.debug('Sync paused with error:', err);
                     }
                 });
 
@@ -115,7 +131,8 @@ export class DataManager {
 
         this.fsrsDataStore = await this.pouchDB.getAllCardStates();
 
-        this.reviewHistory = await this.pouchDB.getReviewHistory();
+        this.reviewHistory = (await this.pouchDB.getReviewHistory()).reverse();
+        this.firstReviewAt = null;
 
         console.debug(`Loaded ${Object.keys(this.fsrsDataStore).length} cards and ${this.reviewHistory.length} reviews from PouchDB`);
     }
@@ -131,6 +148,7 @@ export class DataManager {
         }
         this.fsrsDataStore = cardData;
         this.reviewHistory = data?.reviewHistory || [];
+        this.firstReviewAt = null;
     }
 
     async save() {
@@ -139,6 +157,46 @@ export class DataManager {
             cardData: this.plugin.settings.usePouchDB ? {} : this.fsrsDataStore,
             reviewHistory: this.plugin.settings.usePouchDB ? [] : this.reviewHistory,
         });
+    }
+
+    exportBackup(): string {
+        return buildBackup(this.fsrsDataStore, this.reviewHistory, this.plugin.settings.gamification, this.plugin.manifest?.version ?? '');
+    }
+
+    async importBackup(content: BackupContent): Promise<{ cards: number; matched: number; reviews: number; skipped: number }> {
+        const states: Array<{ cardId: string; deckId: string; filePath: string; fsrs: FSRSData }> = [];
+        let matched = 0;
+        for (const [cardId, data] of Object.entries(content.cardData)) {
+            const existing = this.fsrsDataStore[cardId];
+            const incoming = data.last_review?.getTime() ?? 0;
+            if (existing && (existing.last_review?.getTime() ?? 0) >= incoming) continue;
+            this.fsrsDataStore[cardId] = data;
+            const card = this.cards.get(cardId);
+            if (card) {
+                card.fsrsData = data;
+                matched++;
+            }
+            states.push({ cardId, deckId: card?.deckId ?? '', filePath: card?.filePath ?? '', fsrs: data });
+        }
+
+        const known = new Set(this.reviewHistory.map(log => `${log.cardId}|${log.timestamp}`));
+        const logs = content.reviewHistory.filter(log => !known.has(`${log.cardId}|${log.timestamp}`));
+        if (logs.length > 0) {
+            this.reviewHistory = [...this.reviewHistory, ...logs].sort((a, b) => a.timestamp - b.timestamp);
+            this.firstReviewAt = null;
+        }
+
+        const g = content.gamification;
+        if (g && g.totalCardsReviewed > this.plugin.settings.gamification.totalCardsReviewed) {
+            Object.assign(this.plugin.settings.gamification, g);
+        }
+
+        if (this.plugin.settings.usePouchDB && this.pouchDB) {
+            await this.pouchDB.importData(states, logs);
+        }
+        await this.save();
+        this.recalculateAllDeckStats();
+        return { cards: states.length, matched, reviews: logs.length, skipped: content.skipped };
     }
 
     updateFsrsParameters(params: FSRSParameters) {
@@ -226,13 +284,19 @@ export class DataManager {
     private findCardContext(content: string, breadcrumbs: (string | undefined)[], searchText: string): string | undefined {
         const idx = content.indexOf(searchText);
         if (idx < 0) return undefined;
-        let lineNum = 0;
-        for (let i = 0; i < idx; i++) {
-            if (content.charCodeAt(i) === 10) {
-                lineNum++;
-            }
+        if (this.lineStartsCache?.content !== content) {
+            const starts = [0];
+            for (let i = content.indexOf('\n'); i >= 0; i = content.indexOf('\n', i + 1)) starts.push(i + 1);
+            this.lineStartsCache = { content, starts };
         }
-        return lineNum < breadcrumbs.length ? breadcrumbs[lineNum] : undefined;
+        const starts = this.lineStartsCache.starts;
+        let lo = 0;
+        let hi = starts.length - 1;
+        while (lo < hi) {
+            const mid = (lo + hi + 1) >> 1;
+            if (starts[mid] <= idx) lo = mid; else hi = mid - 1;
+        }
+        return lo < breadcrumbs.length ? breadcrumbs[lo] : undefined;
     }
 
     async updateFile(file: TFile): Promise<boolean> {
@@ -266,7 +330,7 @@ export class DataManager {
         let stateChanged = false;
 
         if (isDeck) {
-            this.removeDeck(deckId, false);
+            this.dropDeckCards(deckId);
             const frontmatter = isRecord(cache?.frontmatter) ? cache.frontmatter : null;
             const title = frontmatter && typeof frontmatter.title === 'string' ? frontmatter.title : file.basename;
             const newDeck: Deck = { id: deckId, title, filePath: file.path, cardIds: new Set(), stats: { new: 0, due: 0, learning: 0 } };
@@ -497,6 +561,13 @@ export class DataManager {
         }
     }
 
+    private dropDeckCards(deckId: string) {
+        const deck = this.decks.get(deckId);
+        if (!deck) return;
+        deck.cardIds.forEach(cardId => this.cards.delete(cardId));
+        this.decks.delete(deckId);
+    }
+
     removeDeck(deckId: string, fullDelete: boolean = true) {
         const deck = this.decks.get(deckId);
         if (deck) {
@@ -510,8 +581,66 @@ export class DataManager {
         }
     }
 
+    private collectCardIds(content: string, filePath: string): string[] {
+        const deckId = this.getDeckId(filePath);
+        const scratch: Deck = { id: deckId, title: '', filePath, cardIds: new Set(), stats: { new: 0, due: 0, learning: 0 } };
+        const lines = content.split('\n');
+        const breadcrumbs = this.buildHeadingBreadcrumbs(lines);
+
+        const realCards = this.cards;
+        this.cards = new Map();
+        try {
+            this.parseBasicCards(content, breadcrumbs, filePath, deckId, scratch);
+            this.parseSingleLineCards(lines, breadcrumbs, filePath, deckId, scratch);
+            this.parseClozeCards(content, breadcrumbs, filePath, deckId, scratch);
+        } finally {
+            this.cards = realCards;
+        }
+        return Array.from(scratch.cardIds);
+    }
+
+    private async rekeyRenamedFile(file: TFile, oldPath: string) {
+        const renames: Array<{ oldId: string; newId: string; deckId: string; filePath: string }> = [];
+
+        if (this.decks.has(this.getDeckId(oldPath))) {
+            const content = await this.plugin.app.vault.read(file);
+            const oldIds = this.collectCardIds(content, oldPath);
+            const newIds = this.collectCardIds(content, file.path);
+            const newDeckId = this.getDeckId(file.path);
+            oldIds.forEach((oldId, i) => {
+                const newId = newIds[i];
+                if (!newId || newId === oldId || !this.fsrsDataStore[oldId] || this.fsrsDataStore[newId]) return;
+                renames.push({ oldId, newId, deckId: newDeckId, filePath: file.path });
+            });
+        }
+
+        const oldNoteKey = `note::${oldPath}`;
+        const newNoteKey = `note::${file.path}`;
+        if (this.noteReviews.delete(oldPath) && this.fsrsDataStore[oldNoteKey] && !this.fsrsDataStore[newNoteKey]) {
+            renames.push({ oldId: oldNoteKey, newId: newNoteKey, deckId: '', filePath: file.path });
+        }
+        if (renames.length === 0) return;
+
+        const idMap = new Map<string, string>();
+        for (const { oldId, newId } of renames) {
+            this.fsrsDataStore[newId] = this.fsrsDataStore[oldId];
+            delete this.fsrsDataStore[oldId];
+            idMap.set(oldId, newId);
+        }
+        for (const log of this.reviewHistory) {
+            const newId = idMap.get(log.cardId);
+            if (newId) log.cardId = newId;
+        }
+        this.firstReviewAt = null;
+
+        if (this.plugin.settings.usePouchDB && this.pouchDB) {
+            await this.pouchDB.rekeyCards(renames);
+        }
+    }
+
     async renameDeck(file: TFile, oldPath: string) {
         const oldDeckId = this.getDeckId(oldPath);
+        await this.rekeyRenamedFile(file, oldPath);
         this.removeDeck(oldDeckId, false);
         this.fileMtimes.delete(oldPath);
         await this.updateFile(file);
@@ -559,14 +688,33 @@ export class DataManager {
             });
     }
 
-    private getReviewedTodayCount(deckId: string): number {
+    private getTodayLogs(): ReviewLog[] {
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
-        return this.reviewHistory.filter(log =>
-            log.timestamp >= todayStart.getTime() &&
-            this.cards.has(log.cardId) &&
-            this.cards.get(log.cardId)?.deckId === deckId
-        ).length;
+        const start = todayStart.getTime();
+        let i = this.reviewHistory.length;
+        while (i > 0 && this.reviewHistory[i - 1].timestamp >= start) i--;
+        return this.reviewHistory.slice(i);
+    }
+
+    private getFirstReviewAt(): Map<string, number> {
+        if (!this.firstReviewAt) {
+            const map = new Map<string, number>();
+            for (const log of this.reviewHistory) {
+                const seen = map.get(log.cardId);
+                if (seen === undefined || log.timestamp < seen) map.set(log.cardId, log.timestamp);
+            }
+            this.firstReviewAt = map;
+        }
+        return this.firstReviewAt;
+    }
+
+    private getReviewedTodayCount(deckId: string): number {
+        let count = 0;
+        for (const log of this.getTodayLogs()) {
+            if (this.cards.get(log.cardId)?.deckId === deckId) count++;
+        }
+        return count;
     }
 
     getReviewQueue(deckId: string): Card[] {
@@ -580,29 +728,24 @@ export class DataManager {
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
 
-        const alreadyReviewedTodaySet = new Set(
-            this.reviewHistory
-                .filter(log => log.timestamp >= todayStart.getTime())
-                .map(log => log.cardId)
-        );
+        const firstReviewAt = this.getFirstReviewAt();
 
-        const everReviewedSet = new Set(this.reviewHistory.map(log => log.cardId));
+        const newIntroducedToday = allCards.filter(c => {
+            const first = firstReviewAt.get(c.id);
+            return first !== undefined && first >= todayStart.getTime();
+        }).length;
 
         const dueCards = allCards.filter(c =>
             c.fsrsData && c.fsrsData.state !== State.New && c.fsrsData.due <= now
         )
-            .filter(c => !alreadyReviewedTodaySet.has(c.id))
             .sort((a, b) => a.fsrsData!.due.getTime() - b.fsrsData!.due.getTime());
 
         const newCards = allCards.filter(c =>
             !c.fsrsData || c.fsrsData.state === State.New
-        )
-            .filter(c => !alreadyReviewedTodaySet.has(c.id));
+        );
 
         const reviewsRemaining = Math.max(0, this.plugin.settings.reviewsPerDay - this.getReviewedTodayCount(deckId));
-        const newCardsRemaining = Math.max(0, this.plugin.settings.newCardsPerDay - newCards.filter(c =>
-            everReviewedSet.has(c.id)
-        ).length);
+        const newCardsRemaining = Math.max(0, this.plugin.settings.newCardsPerDay - newIntroducedToday);
 
         return [
             ...dueCards.slice(0, reviewsRemaining),
@@ -624,8 +767,59 @@ export class DataManager {
         return [...dueCards, ...newCards];
     }
 
+    canUndo(): boolean {
+        return this.undoStack.length > 0;
+    }
+
+    undoLastRating(): Card | null {
+        const entry = this.undoStack.pop();
+        if (!entry) return null;
+        const { card, previous, timestamp, gamification } = entry;
+
+        let logIndex = -1;
+        for (let i = this.reviewHistory.length - 1; i >= 0; i--) {
+            if (this.reviewHistory[i].cardId === card.id && this.reviewHistory[i].timestamp === timestamp) {
+                logIndex = i;
+                break;
+            }
+        }
+        if (logIndex >= 0) this.reviewHistory.splice(logIndex, 1);
+        this.firstReviewAt = null;
+
+        if (previous) {
+            this.fsrsDataStore[card.id] = previous;
+        } else {
+            delete this.fsrsDataStore[card.id];
+        }
+        card.fsrsData = previous;
+        const live = this.cards.get(card.id);
+        if (live) live.fsrsData = previous;
+        Object.assign(this.plugin.settings.gamification, gamification);
+
+        if (this.plugin.settings.usePouchDB && this.pouchDB) {
+            const db = this.pouchDB;
+            this.runInBackground(
+                () => previous ? db.saveCardState(card.id, card.deckId, card.filePath, previous) : db.deleteCardState(card.id),
+                'Failed to restore card state:',
+            );
+            this.runInBackground(() => db.deleteReviewLog(card.id, timestamp), 'Failed to remove review log:');
+            void this.save();
+        } else {
+            void this.save();
+        }
+        this.recalculateAllDeckStats();
+        return card;
+    }
+
     updateCard(card: Card, rating: Rating) {
         const now = new Date();
+        this.undoStack.push({
+            card,
+            previous: this.fsrsDataStore[card.id],
+            timestamp: now.getTime(),
+            gamification: { ...this.plugin.settings.gamification },
+        });
+        if (this.undoStack.length > 100) this.undoStack.shift();
         const fsrsCard = card.fsrsData || {
             due: now, stability: 0, difficulty: 0, elapsed_days: 0,
             scheduled_days: 0, reps: 0, lapses: 0, state: State.New, learning_steps: 0,
@@ -637,14 +831,12 @@ export class DataManager {
 
         const reviewLog: ReviewLog = { cardId: card.id, timestamp: now.getTime(), rating };
         this.reviewHistory.push(reviewLog);
+        if (this.firstReviewAt && !this.firstReviewAt.has(card.id)) this.firstReviewAt.set(card.id, now.getTime());
 
         if (this.plugin.settings.usePouchDB && this.pouchDB) {
-            this.pouchDB.saveCardState(card.id, card.deckId, card.filePath, newFsrsData).catch(err =>
-                console.error('Failed to save card state:', err),
-            );
-            this.pouchDB.addReviewLog(card.id, now.getTime(), rating).catch(err =>
-                console.error('Failed to save review log:', err),
-            );
+            const db = this.pouchDB;
+            this.runInBackground(() => db.saveCardState(card.id, card.deckId, card.filePath, newFsrsData), 'Failed to save card state:');
+            this.runInBackground(() => db.addReviewLog(card.id, now.getTime(), rating), 'Failed to save review log:');
         } else {
             void this.save();
         }
@@ -683,8 +875,7 @@ export class DataManager {
         g.totalCardsReviewed++;
 
         // Most reviews in a day
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        const reviewsToday = this.reviewHistory.filter(l => l.timestamp >= todayStart).length;
+        const reviewsToday = this.getTodayLogs().length;
         if (reviewsToday > g.mostReviewsInDay) {
             g.mostReviewsInDay = reviewsToday;
         }
@@ -742,11 +933,10 @@ export class DataManager {
 
             total++;
 
-            if (data.due <= now) {
-                const daysForward = Math.floor((data.due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                if (daysForward < 7 && daysForward >= 0) {
-                    forecast[daysForward]++;
-                }
+            const dueDay = new Date(data.due.getFullYear(), data.due.getMonth(), data.due.getDate()).getTime();
+            const daysForward = Math.max(0, Math.round((dueDay - todayStart) / (1000 * 60 * 60 * 24)));
+            if (daysForward < 7) {
+                forecast[daysForward]++;
             }
 
             if (data.stability >= 21) {
@@ -902,6 +1092,7 @@ export class DataManager {
 
         this.fsrsDataStore = {};
         this.reviewHistory = [];
+        this.firstReviewAt = null;
 
         for (const card of this.cards.values()) {
             card.fsrsData = undefined;
@@ -911,7 +1102,7 @@ export class DataManager {
             console.debug('Clearing PouchDB card states and review logs...');
             await this.pouchDB.destroy();
             const { PouchDBManager } = await import('../database/PouchDBManager');
-            this.pouchDB = new PouchDBManager('lemma_local');
+            this.pouchDB = new PouchDBManager(this.databaseName());
             if (this.plugin.settings.syncEnabled) {
                 await this.initializeSync();
             }
@@ -960,12 +1151,9 @@ export class DataManager {
         this.reviewHistory.push(reviewLog);
 
         if (this.plugin.settings.usePouchDB && this.pouchDB) {
-            this.pouchDB.saveCardState(noteKey, '', filePath, newFsrsData).catch(err =>
-                console.error('Failed to save note review state:', err),
-            );
-            this.pouchDB.addReviewLog(noteKey, now.getTime(), rating).catch(err =>
-                console.error('Failed to save note review log:', err),
-            );
+            const db = this.pouchDB;
+            this.runInBackground(() => db.saveCardState(noteKey, '', filePath, newFsrsData), 'Failed to save note review state:');
+            this.runInBackground(() => db.addReviewLog(noteKey, now.getTime(), rating), 'Failed to save note review log:');
         } else {
             void this.save();
         }

@@ -59,7 +59,7 @@ Before submitting a pull request:
    ```bash
    npm run build
    ```
-4. Test the built plugin in a live Obsidian vault using `deploy.mjs`.
+4. Test the built plugin in a live Obsidian vault using `deploy.mjs`. Unit tests use jsdom and a stub of the Obsidian API, so they cannot prove that keyboard handling or modal layout works in the real app. To test in a disposable profile without touching your own, copy a vault into a temporary folder, point `XDG_CONFIG_HOME` at a temporary config directory containing an `obsidian.json` that lists only that vault, and start Obsidian with `--remote-debugging-port=9333` so you can drive it through the Chrome DevTools Protocol. Never run `obsidian` with the default config while testing: it opens your real vault.
 
 ## Submitting Pull Requests
 

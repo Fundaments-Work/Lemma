@@ -2,7 +2,7 @@
 
 ## Overview
 
-Lemma is an Obsidian plugin for spaced-repetition flashcards using the FSRS 4.5 algorithm. It turns any tagged note into a deck, parses cards from Markdown, and manages review scheduling entirely on-device.
+Lemma is an Obsidian plugin for spaced-repetition flashcards using the FSRS-5 algorithm. It turns any tagged note into a deck, parses cards from Markdown, and manages review scheduling entirely on-device.
 
 ---
 

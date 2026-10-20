@@ -105,6 +105,9 @@ Type answers directly into the review card and get a Correct / Close match / Not
 ### Guided Card & Deck Creation
 Interactive creation modals with dropdown format selection, live syntax previews, and automated deck tagging so you never have to memorize card syntax.
 
+### Undo, Backup and Import
+Undo the last rating from the review window (`Z`). Export all schedules, review history and streak data to a JSON file and merge it back on another device, or import cards from a plain text export of another flashcard app or a CSV or TSV file.
+
 ### Optional CouchDB Sync
 Review data is stored on each device (IndexedDB). Optionally connect your own CouchDB or Cloudant instance to sync it across devices.
 
@@ -218,6 +221,7 @@ tags: [review]
 | `2` | Hard |
 | `3` | Good |
 | `4` | Easy |
+| `Z` | Undo the last rating |
 | `Esc` | Exit session |
 | `Swipe left` | Rate Again |
 | `Swipe down` | Rate Hard |
@@ -244,6 +248,9 @@ tags: [review]
 | `Sync now` | Trigger a manual CouchDB sync |
 | `Check sync status` | View sync connection status |
 | `Review due notes` | Start whole-note review session |
+| `Import cards from file` | Create a deck note from a plain text export or a CSV or TSV file |
+| `Export review data (backup)` | Save schedules, history and streak data to a JSON file in the vault |
+| `Import review data from backup` | Merge a backup, or a `data.json` file from any version, into your data |
 | `Reset all card progress` | Reset all scheduling data |
 
 ---
@@ -253,7 +260,7 @@ tags: [review]
 | Setting | Description |
 |---|---|
 | **Deck tag** | Tag identifying deck files (default: `flashcards`) |
-| **Max new cards/day** | New-card limit, applied per deck |
+| **Max new cards/day** | New-card limit, applied to each deck separately and counting cards already started today |
 | **Max reviews/day** | Daily limit on review cards |
 | **Review font size** | Font size in the review modal |
 | **FSRS parameters** | Algorithm weights and retention target configuration |
@@ -276,10 +283,19 @@ non-Markdown files, attachments, or data belonging to other plugins.
 ### Data storage
 
 Settings are saved through Obsidian's plugin data API (`data.json`). Scheduling state and review
-history are stored in IndexedDB through PouchDB. PouchDB probes `localStorage` and uses a small
+history are stored in IndexedDB through PouchDB, in a database that is named per vault for new
+installs (existing installs keep the original shared name, so no data is moved). PouchDB probes `localStorage` and uses a small
 cross-tab change marker; this is the Local Storage disclosure reported by the community plugin
 scanner. Lemma never stores vault content, settings, or review data in `localStorage` or
 `sessionStorage`.
+
+### Files Lemma writes and reads
+
+Lemma creates files in your vault only when you run a command that says so: **Export review data
+(backup)** writes one `Lemma backup <date and time>.json` file to the vault root, **Import cards
+from file** creates one new deck note, **Create new deck** and **Create card** create or edit the
+note you choose. The import commands read only the single file you select in the file picker.
+Lemma does not access files outside your vault.
 
 ### Network access
 

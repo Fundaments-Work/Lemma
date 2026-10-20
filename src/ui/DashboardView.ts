@@ -1,6 +1,6 @@
 import { ItemView, WorkspaceLeaf, ButtonComponent, Notice, setIcon } from 'obsidian';
 import { VIEW_TYPE_DASHBOARD, VIEW_ICON_NAME, getErrorMessage } from '../data/constants';
-import type { Card, Deck } from '../data/types';
+import type { Deck } from '../data/types';
 import { ReviewModal } from './ReviewModal';
 import { StatsModal } from './StatsModal';
 import { CustomStudyModal } from './CustomStudyModal';
@@ -67,10 +67,12 @@ export class DashboardView extends ItemView {
 
         const studyAllBtn = createDashBtn('play', 'Study all due', () => {
             const allDueCards = this.plugin.dataManager.getDecks()
-                .flatMap((d: Deck) => this.plugin.dataManager.getReviewQueue(d.id))
-                .filter((c: Card, i: number, arr: Card[]) => arr.indexOf(c) === i);
+                .flatMap((d: Deck) => this.plugin.dataManager.getReviewQueue(d.id));
             if (allDueCards.length === 0) {
-                new Notice('No cards due for review!');
+                const limited = this.plugin.dataManager.getDecks().some((d: Deck) => d.stats.new > 0 || d.stats.due > 0);
+                new Notice(limited
+                    ? 'Daily limits reached. Use cram on a deck to keep studying.'
+                    : 'No cards due for review!');
                 return;
             }
             new ReviewModal(this.app, this.plugin, allDueCards).open();
@@ -302,7 +304,9 @@ export class DashboardView extends ItemView {
             e.stopPropagation();
             const queue = this.plugin.dataManager.getReviewQueue(deck.id);
             if (queue.length === 0) {
-                new Notice('No cards to review in this deck!');
+                new Notice(deck.stats.new > 0 || deck.stats.due > 0
+                    ? 'Daily limit reached for this deck. Use cram to keep studying.'
+                    : 'No cards to review in this deck!');
                 return;
             }
             new ReviewModal(this.app, this.plugin, queue, deck.title).open();

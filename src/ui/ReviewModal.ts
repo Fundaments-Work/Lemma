@@ -1,5 +1,5 @@
 import { App, Modal, ButtonComponent, Component, MarkdownRenderer, Notice, setIcon } from 'obsidian';
-import { Rating } from 'ts-fsrs';
+import { Rating, State } from 'ts-fsrs';
 import type { Card } from '../data/types';
 import { isInPlaceImageCard } from '../data/constants';
 
@@ -7,12 +7,15 @@ type FSRSFlashcardsPlugin = import('../plugin/main').FSRSFlashcardsPlugin;
 
 type SwipeDirection = 'left' | 'right' | 'up' | 'down' | null;
 const SWIPE_THRESHOLD = 60;
+const LEARN_AHEAD_MS = 30 * 60 * 1000;
+const REQUEUE_GAP = 4;
 
 export class ReviewModal extends Modal {
     private plugin: FSRSFlashcardsPlugin;
     private queue: Card[];
     private deckName: string | null;
     private currentCardIndex = 0;
+    private undoButton: HTMLElement | null = null;
     private state: 'question' | 'answer' = 'question';
     private isInPlaceImage = false;
     private activeInPlaceView: 'question' | 'answer' = 'question';
@@ -52,7 +55,9 @@ export class ReviewModal extends Modal {
         this.titleEl.createSpan({ text: `${this.currentCardIndex + 1}/${this.queue.length}`, cls: 'fsrs-counter-badge' });
         this.setupUI();
         void this.showNextCard();
-        this.scope.register([], 'keydown', (evt: KeyboardEvent) => this.handleKeyPress(evt));
+        for (const key of [' ', 'Enter', '1', '2', '3', '4', 'z', 'Z']) {
+            this.scope.register([], key, (evt: KeyboardEvent) => this.handleKeyPress(evt));
+        }
     }
 
     onClose() {
@@ -68,29 +73,38 @@ export class ReviewModal extends Modal {
     private setupUI() {
         const card = this.getCurrentCard();
         this.modalEl.find('.modal-title').addEventListener('click', () => {
-            const data = card.fsrsData;
+            const data = this.getCurrentCard().fsrsData;
             if (!data) { new Notice('This is a new card.'); return; }
             const info = `Stability: ${data.stability.toFixed(2)}\nDifficulty: ${data.difficulty.toFixed(2)}\nReps: ${data.reps}\nLapses: ${data.lapses}\nDue: ${data.due.toLocaleDateString()}`;
             new Notice(info, 10000);
         });
         this.modalEl.find('.modal-title').addClass('fsrs-card-info-title');
 
-        const headerControls = this.modalEl.querySelector('.modal-header-controls');
+        const headerControls = this.modalEl.querySelector('.modal-header-controls')
+            ?? this.modalEl.querySelector('.modal-header')?.createDiv({ cls: 'fsrs-header-actions' });
         if (headerControls) {
             const editBtn = headerControls.createDiv({ cls: 'clickable-icon' });
             setIcon(editBtn, 'pencil');
             editBtn.setAttribute('aria-label', 'Edit this card');
             editBtn.addEventListener('click', () => {
-                void this.app.workspace.openLinkText(card.filePath, card.filePath);
+                const { filePath } = this.getCurrentCard();
+                void this.app.workspace.openLinkText(filePath, filePath);
                 this.close();
             });
             headerControls.prepend(editBtn);
+
+            this.undoButton = headerControls.createDiv({ cls: 'clickable-icon' });
+            setIcon(this.undoButton, 'undo-2');
+            this.undoButton.setAttribute('aria-label', 'Undo last rating');
+            this.undoButton.addEventListener('click', () => this.undoRating());
+            headerControls.prepend(this.undoButton);
+            this.updateUndoButton();
         }
 
         const container = this.contentEl.createDiv({ cls: 'fsrs-review-container' });
 
         this.cardContainer = container.createDiv({ cls: 'fsrs-review-card' });
-        this.cardContainer.style.setProperty('font-size', `${this.plugin.settings.fontSize}px`);
+        this.cardContainer.setCssProps({ '--fsrs-card-font-size': `${this.plugin.settings.fontSize}px` });
 
         const contextEl = this.cardContainer.createDiv({ cls: 'fsrs-card-context' });
         if (card.context) {
@@ -367,9 +381,37 @@ export class ReviewModal extends Modal {
     }
 
     private handleRating(rating: Rating) {
-        this.plugin.dataManager.updateCard(this.getCurrentCard(), rating);
+        const card = this.getCurrentCard();
+        this.plugin.dataManager.updateCard(card, rating);
+        const data = card.fsrsData;
+        if (data && (data.state === State.Learning || data.state === State.Relearning)
+            && data.due.getTime() - Date.now() <= LEARN_AHEAD_MS) {
+            const at = Math.min(this.queue.length, this.currentCardIndex + 1 + REQUEUE_GAP);
+            this.queue.splice(at, 0, card);
+        }
         this.currentCardIndex++;
+        this.updateUndoButton();
         void this.showNextCard();
+    }
+
+    private undoRating() {
+        if (this.currentCardIndex === 0 || !this.plugin.dataManager.canUndo()) return;
+        const card = this.plugin.dataManager.undoLastRating();
+        if (!card) return;
+        this.currentCardIndex--;
+        const duplicate = this.queue.indexOf(card, this.currentCardIndex + 1);
+        if (duplicate > this.currentCardIndex) this.queue.splice(duplicate, 1);
+        this.updateUndoButton();
+        void this.showNextCard();
+    }
+
+    private updateUndoButton() {
+        if (!this.undoButton) return;
+        if (this.currentCardIndex > 0 && this.plugin.dataManager.canUndo()) {
+            this.undoButton.show();
+        } else {
+            this.undoButton.hide();
+        }
     }
 
     private showCompletionScreen() {
@@ -384,6 +426,14 @@ export class ReviewModal extends Modal {
     private handleKeyPress(evt: KeyboardEvent) {
         if (evt.key === 'Escape') {
             this.close();
+            return;
+        }
+
+        const typing = evt.target instanceof HTMLInputElement || evt.target instanceof HTMLTextAreaElement;
+        if (typing) return;
+        if (evt.key.toLowerCase() === 'z' && !evt.shiftKey && !evt.altKey) {
+            evt.preventDefault();
+            this.undoRating();
             return;
         }
 
