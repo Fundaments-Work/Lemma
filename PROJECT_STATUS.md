@@ -46,7 +46,7 @@ All core features are implemented and functional:
 - [x] Stats v2: retention curve (predicted vs actual), card maturity doughnut, 12-month activity heatmap, review interval histogram, and per-deck stacked breakdown
 - [x] Licensing: copyright attribution corrected to Fundaments Work (2025-2026), `THIRD_PARTY_NOTICES.md` added for bundled dependencies, contribution terms documented, license row added to the settings About tab
 - [x] Security hardening: CouchDB credentials kept out of replicated sync metadata, credential redaction in status output, insecure HTTP warning, production dependency audit in CI, and community review disclosures for vault, storage, and network access
-- [x] Community review compliance: release assets limited to `main.js`, `manifest.json`, and `styles.css`; `package-lock.json` restored with all `resolved` URLs on the public npm registry and `.npmrc` pinning that registry; `skipLibCheck` enabled for the scanner's standalone `tsc` run; release builds use `npm ci` to match the scanner's dependency layout; `obsidian` typings pinned to 1.8.7; `minAppVersion` raised to 1.7.2 to match the APIs already in use; scanner disclosures documented
+- [x] Community review compliance: release assets limited to `main.js`, `manifest.json`, and `styles.css`; `package-lock.json` restored with all `resolved` URLs on the public npm registry and `.npmrc` pinning that registry; `skipLibCheck` enabled for the scanner's standalone `tsc` run; the pnpm lockfile was removed so the scanner selects `npm ci`, and release builds use npm; `obsidian` typings pinned to 1.8.7; `minAppVersion` raised to 1.7.2 to match the APIs already in use; scanner disclosures documented
 - [ ] Per-deck settings overrides
 
 ### Phase 3 — Polish (planned)

@@ -6,8 +6,8 @@ Thank you for contributing to Lemma. We welcome bug reports, feature suggestions
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [pnpm](https://pnpm.io/) (v9 or higher)
+- [Node.js](https://nodejs.org/) (v20.19 or higher)
+- npm (bundled with Node.js; v10 or higher)
 
 ### Setup
 
@@ -19,16 +19,20 @@ Thank you for contributing to Lemma. We welcome bug reports, feature suggestions
    ```
 3. Install dependencies:
    ```bash
-   pnpm install
+   npm ci
    ```
+
+Use npm for all dependency changes. `package-lock.json` is the only committed
+lockfile; the community review scanner selects `npm ci` when it is the only one
+present.
 
 ### Available Scripts
 
-- `pnpm run build` — Typecheck and bundle with esbuild in production mode.
-- `pnpm run dev` — Watch mode for rapid development.
-- `pnpm run test` — Run the Vitest test suite.
-- `pnpm run lint` — Run ESLint with Obsidian plugin rules.
-- `pnpm run lint:fix` — Automatically fix linting violations.
+- `npm run build` — Typecheck and bundle with esbuild in production mode.
+- `npm run dev` — Watch mode for rapid development.
+- `npm test` — Run the Vitest test suite.
+- `npm run lint` — Run ESLint with Obsidian plugin rules.
+- `npm run lint:fix` — Automatically fix linting violations.
 - `node deploy.mjs <vault-path>` — Build and deploy the plugin to an Obsidian vault for live testing.
 
 ## Code Conventions
@@ -45,15 +49,15 @@ Before submitting a pull request:
 
 1. Run the test suite:
    ```bash
-   pnpm run test
+   npm test
    ```
 2. Check for linting errors and style issues:
    ```bash
-   pnpm run lint
+   npm run lint
    ```
 3. Verify the production build:
    ```bash
-   pnpm run build
+   npm run build
    ```
 4. Test the built plugin in a live Obsidian vault using `deploy.mjs`.
 
