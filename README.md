@@ -269,14 +269,17 @@ Lemma is local-first. It has no telemetry, analytics, ads, or crash reporting.
 ### Vault access
 
 Lemma indexes Markdown notes only (`vault.getMarkdownFiles()`) so it can find notes tagged
-`#flashcards` or `#review`. It does not enumerate or read non-Markdown files, attachments, or
-data belonging to other plugins.
+`#flashcards` or `#review`. This is the Vault Enumeration disclosure reported by the community
+plugin scanner: indexing notes requires enumerating their paths. It does not enumerate or read
+non-Markdown files, attachments, or data belonging to other plugins.
 
 ### Data storage
 
 Settings are saved through Obsidian's plugin data API (`data.json`). Scheduling state and review
-history are stored in IndexedDB through PouchDB. PouchDB performs a `localStorage` capability
-probe, but Lemma never stores vault content or review data in `localStorage` or `sessionStorage`.
+history are stored in IndexedDB through PouchDB. PouchDB probes `localStorage` and uses a small
+cross-tab change marker; this is the Local Storage disclosure reported by the community plugin
+scanner. Lemma never stores vault content, settings, or review data in `localStorage` or
+`sessionStorage`.
 
 ### Network access
 
