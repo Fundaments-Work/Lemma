@@ -173,4 +173,6 @@ Validate by:
 Pushing a semver tag without `v` prefix (e.g. `1.1.3`) triggers `.github/workflows/release.yml`:
 Validates semver -> checks manifest version -> lints -> builds -> creates GitHub release with `main.js`, `manifest.json`, `styles.css`.
 
+The release workflow installs with `npm ci` and builds with npm so its dependency layout matches the community scanner's byte-for-byte build verification. pnpm remains the local development package manager.
+
 **Do not push release tags unless explicitly asked.**
