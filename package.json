@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "deploy": "pnpm run build && node deploy.mjs",
+    "deploy": "npm run build && node deploy.mjs",
     "lint": "eslint main.ts src/**/*.ts",
     "lint:fix": "eslint main.ts src/**/*.ts --fix",
     "test": "vitest run",

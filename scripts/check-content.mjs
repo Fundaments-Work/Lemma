@@ -6,7 +6,7 @@
  * source of truth, which needs the network. A unit test that needs the network
  * stops being a unit test, and the day it starts skipping on timeout it stops
  * being a gate. So this runs in CI and before a release, where network access
- * is a given, and `pnpm test` stays hermetic.
+ * is a given, and `npm test` stays hermetic.
  *
  * Why compare the whole set of Buy Me Momo URLs in a file rather than parsing
  * one constant: the URL appears in manifests, YAML and template literals, and

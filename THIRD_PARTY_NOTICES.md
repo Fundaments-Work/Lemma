@@ -35,5 +35,5 @@ Versions follow `package.json`. After changing a dependency, update the version
 column above:
 
 ```bash
-pnpm list chart.js pouchdb-browser ts-fsrs events --depth 0
+npm ls chart.js pouchdb-browser ts-fsrs events --depth=0
 ```

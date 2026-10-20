@@ -3,6 +3,12 @@ node_modules/
 *.log
 npm-debug.log*
 
+# Only npm's lockfile is committed; other lockfiles change the review scanner's install path
+pnpm-lock.yaml
+yarn.lock
+bun.lockb
+bun.lock
+
 # Python
 __pycache__/
 *.py[cod]

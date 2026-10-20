@@ -362,17 +362,17 @@ esbuild.config.mjs
 ```
 
 ### Scripts
-- `pnpm run dev` — dev mode (no typecheck, sourcemaps)
-- `pnpm run build` — `tsc -noEmit -skipLibCheck` + esbuild production
-- `pnpm run lint` — eslint (main.ts + src/)
-- `pnpm run lint:fix` — auto-fix lint errors
-- `pnpm run test` — vitest run (18 tests)
-- `pnpm run test:watch` — vitest watch mode
+- `npm run dev` — dev mode (no typecheck, sourcemaps)
+- `npm run build` — `tsc -noEmit -skipLibCheck` + esbuild production
+- `npm run lint` — eslint (main.ts + src/)
+- `npm run lint:fix` — auto-fix lint errors
+- `npm test` — vitest run
+- `npm run test:watch` — vitest watch mode
 
 ### Release
 Push semver tag (e.g., `1.1.0`) → GitHub Actions:
 1. Validate tag matches `manifest.json` version
-2. `pnpm install && pnpm run lint && pnpm run build`
+2. `npm ci && npm run lint && npm run build`
 3. Create release with `main.js`, `manifest.json`, `styles.css`
 
 ### Security
