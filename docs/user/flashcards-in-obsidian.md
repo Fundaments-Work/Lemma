@@ -76,7 +76,7 @@ What are the three stages of cellular respiration?
 3. The electron transport chain
 ```
 
-The front is everything up to a line that is exactly `---`. The back runs until the next `---card---` or the end of the note, so leave a blank line before the next card and do not put other writing right after a card.
+The front is everything up to a line that is exactly `---`. The back runs until the next `---card---` or the end of the note, and a blank line does not end it, so anything you write after a card's back becomes part of that back. Put your next `---card---` after each card and keep other writing out of the way.
 
 ### Cloze deletions
 
@@ -122,7 +122,7 @@ The biggest gains come from the cards themselves, not the software. These points
 - **Understand first, then memorise.** Piotr Wozniak, creator of SuperMemo, lists understanding as his first rule, and Anki's manual quotes the same idea. Cards made from material you do not yet understand are hard to learn and quick to forget.
 - **Keep each card small.** Wozniak calls this the minimum information principle: one simple, specific fact per card is easier to recall and to schedule than a paragraph. If an answer is a list, split it into several cards or use clozes.
 - **Use cloze deletions.** He describes fill-in-the-blank cards as easy to write and effective. They work well on sentences you already have in your notes.
-- **Avoid unordered sets and long enumerations.** Wozniak advises breaking them into smaller groups or overlapping clozes.
+- **Avoid unordered sets and long enumerations.** Wozniak advises converting sets into enumerations, and dealing with unavoidable enumerations through cloze deletions, overlapping ones if possible.
 - **Make questions unambiguous.** Cut unnecessary words so there is only one correct answer. If two cards get confused, rewrite them to tell them apart.
 - **Link to what you know.** Add an example or a connection to something familiar, and note the source or date for facts that can change.
 - **Make your own cards.** Anki's manual says that creating your own deck is the most effective way to learn a complex subject, and suggests shared decks supplement rather than replace outside material.
