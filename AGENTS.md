@@ -20,23 +20,21 @@ node deploy.mjs <vault-path>   # copy built files to vault
 
 ## Cross-repo contracts
 
-Two other repos hold facts this repo depends on. Both are **read-only** from
-here: change them in the source repo, never here.
+Facts this repo shares with other repos. The design system is **read-only**
+from here: change it in its own repo, never here.
 
-### `Fundaments-Work/content` — shared facts
+### Buy Me Momo URL
 
-- **Canonical home of the Buy Me Momo URL**: `support.json`, channel `buyMeMomo`.
-- This repo keeps the literal in four places: `manifest.json` (`fundingUrl`),
-  `.github/FUNDING.yml`, `README.md`, and `src/ui/FSRSSettingsTab.ts`. All four
-  are deliberate literals — Obsidian reads `manifest.json` straight off disk and
-  the rest ship as built artifacts, so none of them can depend on a sibling repo
-  at build time without adding real fragility to the release pipeline.
-- The old `check:content` script and its release-workflow step were removed (commit
-  `b2fb66e`), so nothing verifies the four literals automatically. Check them by hand
-  against `support.json` before changing any of them.
-- **To change the link: change `content/support.json` first**, push it, then
-  update the literals here. Fixing only this repo leaves both landing sites and
-  Theorem advertising a dead URL.
+- This repo keeps the literal in five places: `manifest.json` (`fundingUrl`),
+  `.github/FUNDING.yml`, `README.md` (badge and links), `FLASHCARD_GUIDE.md`
+  and `src/ui/FSRSSettingsTab.ts`. They are deliberate literals: Obsidian reads
+  `manifest.json` straight off disk and the rest ship as built artifacts, so
+  none of them can depend on another repo at build time.
+- Nothing verifies them automatically (the old `check:content` script was
+  removed in commit `b2fb66e`). The same URL is used by Theorem and the landing
+  sites; every place it appears is listed in the handbook note `Brand/Support
+  channels`. Change them all together, or some page ends up advertising a dead
+  URL.
 
 ### `Fundaments-Work/design-system` — visual language
 
