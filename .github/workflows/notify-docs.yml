@@ -33,3 +33,16 @@ jobs:
             -F "client_payload[product]=lemma" \
             -F "client_payload[ref]=${{ github.ref_name }}" \
             -F "client_payload[sha]=${{ github.sha }}" || echo "Failed to dispatch to fundaments-landing"
+
+      - name: Rebuild the product site
+        env:
+          DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK_URL }}
+        run: |
+          # The product site reads the current release version from GitHub at build
+          # time, so a new release needs a rebuild even when no site file changed.
+          if [ -n "$DEPLOY_HOOK" ]; then
+            echo "Triggering Cloudflare Pages deploy hook..."
+            curl -fsS -X POST "$DEPLOY_HOOK"
+          else
+            echo "::notice::CLOUDFLARE_DEPLOY_HOOK_URL is not set; the product site will not rebuild on this event."
+          fi
