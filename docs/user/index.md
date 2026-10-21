@@ -66,6 +66,12 @@ Lemma makes no network requests unless you turn on sync. It has no telemetry or 
 - **[Migrating](migrating.md)**
   Move old `data.json` review data to the local database, and bring cards from other tools by converting text.
 
+- **[FSRS in Obsidian](fsrs-in-obsidian.md)**
+  What FSRS is, how it differs from SM-2 style schedulers, what Lemma uses and tunes, and whether you need to understand it.
+
+- **[Lemma compared with other Obsidian flashcard plugins](compared-with-other-plugins.md)**
+  A sourced comparison of scheduling, card syntax, data storage, mobile, sync, licence and AI features, and when another plugin fits better.
+
 - **[Troubleshooting](troubleshooting.md)**
   Fix cards that do not appear, progress that looks wrong, sync errors, and known limitations.
 
