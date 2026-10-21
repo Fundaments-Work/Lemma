@@ -15,7 +15,9 @@
 <br/><br/>
 
 <p><strong>A modern, FSRS-powered spaced repetition plugin that lives inside your notes.</strong><br>
-No separate app. Write, tag, and study directly where your knowledge lives, with your data in your own vault and backups one command away.</p>
+No separate app. Write, tag, and study directly where your knowledge lives. Cards stay plain Markdown in your vault; review history stays on your device (or your own CouchDB), with backups one command away.</p>
+
+<p><a href="https://fundaments.work/docs/lemma/">Docs</a> · <a href="https://fundaments.work/docs/lemma/guide/flashcards-in-obsidian/">How to make flashcards in Obsidian</a> · <a href="https://fundaments.work/docs/lemma/guide/compared-with-other-plugins/">Compared with other plugins</a> · <a href="https://fundaments.work/docs/lemma/compare/vs-anki/">Lemma vs Anki</a></p>
 
 <a href="obsidian://show-plugin?id=lemma-flashcards"><img src="https://img.shields.io/badge/Install%20in%20Obsidian-7C3AED?style=for-the-badge&logo=obsidian&logoColor=white" alt="Install in Obsidian"></a>
 &nbsp;
