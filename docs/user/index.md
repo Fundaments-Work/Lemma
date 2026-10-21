@@ -30,6 +30,9 @@ Lemma makes no network requests unless you turn on sync. It has no telemetry or 
 - **[Getting started](getting-started.md)**
   Install Lemma from Community plugins, with BRAT or by hand, create a deck, write a first card and complete a first review.
 
+- **[How to make flashcards in Obsidian](flashcards-in-obsidian.md)**
+  A practical guide from your first card to reviewing on your phone, with examples checked against the parser.
+
 - **[Writing cards](writing-cards.md)**
   The exact syntax for basic, single-line, reversed, cloze, image occlusion, type-in and whole-note cards, block IDs, and what you can put inside a card.
 
@@ -71,6 +74,9 @@ Lemma makes no network requests unless you turn on sync. It has no telemetry or 
 
 - **[Lemma compared with other Obsidian flashcard plugins](compared-with-other-plugins.md)**
   A sourced comparison of scheduling, card syntax, data storage, mobile, sync, licence and AI features, and when another plugin fits better.
+
+- **[Lemma vs Anki](vs-anki.md)**
+  A sourced comparison with Anki on scheduling, card storage, sync, mobile, add-ons and licence, and what moving from Anki involves.
 
 - **[Troubleshooting](troubleshooting.md)**
   Fix cards that do not appear, progress that looks wrong, sync errors, and known limitations.
