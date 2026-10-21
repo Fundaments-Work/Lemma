@@ -50,7 +50,7 @@ Cram sessions and [custom study](custom-study.md) sessions do not use the daily 
 
 Two settings in **Settings > Lemma > Advanced** change how aggressive the schedule is.
 
-- **Request retention** is the share of cards you want to remember when they come due. The default is 0.9, meaning 90 percent. Raising it shortens intervals and increases your daily workload. Lowering it lengthens intervals and you will forget more. The field accepts values greater than 0 and less than 1; its help text suggests 0.7 to 0.99.
+- **Request retention** is the share of cards you want to remember when they come due. The default is 0.9, meaning 90 percent. Raising it shortens intervals and increases your daily workload. Lowering it lengthens intervals and you will forget more. The field accepts values greater than 0 and less than 1; its help text recommends 0.7 to 0.99.
 - **Maximum interval** is the longest gap between reviews, in days. The default is 36500 (about 100 years).
 
 Changing either setting affects future schedules only. Cards already scheduled keep their due dates until you review them.

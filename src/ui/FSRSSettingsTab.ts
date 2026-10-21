@@ -262,7 +262,7 @@ export class FSRSSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Request retention')
-            .setDesc('The desired retention rate (0.7 to 0.99).')
+            .setDesc('The share of cards you want to remember when they come due, between 0 and 1. Values from 0.7 to 0.99 work best.')
             .addText((text) => text
                 .setValue(this.plugin.settings.fsrsParams.request_retention.toString())
                 .onChange(async (value) => {
