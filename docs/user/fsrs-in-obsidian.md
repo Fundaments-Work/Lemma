@@ -16,7 +16,7 @@ A practical way to see the difference is what each scheduler stores. The documen
 
 ## What does Lemma use?
 
-Lemma uses FSRS-5 with the standard 19 default weights, through the open source [ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs) library, a "TypeScript toolkit for building spaced repetition systems with FSRS." Lemma bundles ts-fsrs 4.7.1. The ts-fsrs README says the library version and the FSRS model version are independent, and that its `DefaultScheduler` in ts-fsrs v6 defaults to FSRS-7. The defaults of the bundled version are the 19-weight FSRS-5 set, which Lemma saves in its settings and passes to the scheduler.
+Lemma uses FSRS-5 with the standard 19 default weights, through the open source [ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs) library, a "TypeScript toolkit for building spaced repetition systems with FSRS." Lemma bundles ts-fsrs 4.7.1. The defaults of that version are the 19-weight FSRS-5 set, which Lemma saves in its settings and passes to the scheduler. FSRS-5 is not the newest model. The open-spaced-repetition algorithm page lists FSRS-6 as the latest released version, and the current stable ts-fsrs release, 5.4.2, implements it. FSRS-7 is in beta: the ts-fsrs README says the library version and the FSRS model version are independent, and that ts-fsrs v6, published so far only as beta releases, defaults to FSRS-7. Lemma stays on FSRS-5 for now.
 
 Lemma turns FSRS short-term scheduling on and fuzz off, with no setting for either. See [How scheduling works](how-scheduling-works.md).
 
@@ -54,6 +54,8 @@ Last checked: October 2026.
 
 - [Free Spaced Repetition Scheduler README](https://github.com/open-spaced-repetition/free-spaced-repetition-scheduler): what FSRS is (repository description and README), the difficulty, stability and retrievability model, the list of optimizer packages.
 - [ABC of FSRS](https://github.com/open-spaced-repetition/awesome-fsrs/wiki/ABC-of-FSRS): the SM-2 comparison and its stated 20-30 percent figure with the simulation caveat, desired retention, advice on parameters and defaults.
+- [FSRS algorithm page](https://github.com/open-spaced-repetition/awesome-fsrs/wiki/The-Algorithm), read 21 October 2026: FSRS-6 as the newest listed version.
 - [ts-fsrs README](https://github.com/open-spaced-repetition/ts-fsrs): description of the library, model version independence, FSRS-7 default in ts-fsrs v6.
+- [ts-fsrs on npm](https://www.npmjs.com/package/ts-fsrs), read 21 October 2026: 5.4.2 as the `latest` release, ts-fsrs 6 only under the `beta` tag (6.0.0-beta.15).
 - [Obsidian Spaced Repetition data storage documentation](https://www.stephenmwangi.com/obsidian-spaced-repetition/data-storage/): HTML comment and `sr-` frontmatter fields as an example of SM-2 style data.
 - Lemma facts: Lemma's source code and `THIRD_PARTY_NOTICES.md` (ts-fsrs 4.7.1, 19 default weights, retention 0.9, maximum interval 36500, short-term on, fuzz off).
