@@ -1,34 +1,46 @@
 # Lemma
 
-<div align="center">
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Fundaments-Work/Lemma/main/icon.svg" width="96" height="96" alt="Lemma logo" />
+</p>
 
-<img src="https://raw.githubusercontent.com/Fundaments-Work/Lemma/main/icon.svg" width="96" height="96" alt="Lemma logo" />
+<p align="center">
+  <strong>A modern, FSRS-powered spaced repetition plugin that lives inside your notes.</strong><br>
+  No separate app. Write, tag, and study directly where your knowledge lives. Cards stay plain Markdown in your vault; review history stays on your device (or your own CouchDB), with backups one command away.
+</p>
 
-<br/><br/>
+<p align="center">
+  <a href="obsidian://show-plugin?id=lemma-flashcards"><img src="https://img.shields.io/badge/install%20in%20obsidian-lemma--flashcards-c6f135?style=for-the-badge&labelColor=141416&logo=obsidian&logoColor=c6f135" alt="Install in Obsidian"></a>
+  <a href="https://github.com/Fundaments-Work/Lemma/releases"><img src="https://img.shields.io/github/v/release/Fundaments-Work/Lemma?include_prereleases&label=latest&style=for-the-badge&labelColor=141416&color=c6f135" alt="Latest release"></a>
+  <a href="https://github.com/Fundaments-Work/Lemma/releases"><img src="https://img.shields.io/github/downloads/Fundaments-Work/Lemma/total?style=for-the-badge&labelColor=141416&color=c6f135" alt="Downloads"></a>
+</p>
 
-<img src="https://img.shields.io/badge/Obsidian-Plugin-7C3AED?style=flat-square&logo=obsidian&logoColor=white" alt="Obsidian Plugin">
-<img src="https://img.shields.io/badge/dynamic/json?logo=obsidian&color=7C3AED&label=downloads&query=%24%5B%27lemma-flashcards%27%5D.downloads&url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-releases%2Fmaster%2Fcommunity-plugin-stats.json&style=flat-square" alt="Downloads">
-<img src="https://img.shields.io/github/v/release/Fundaments-Work/Lemma?style=flat-square&color=7C3AED&label=version" alt="Version">
-<img src="https://img.shields.io/github/license/Fundaments-Work/Lemma?style=flat-square&color=22c55e" alt="MIT License">
-<img src="https://img.shields.io/badge/algorithm-FSRS--5-f59e0b?style=flat-square" alt="FSRS">
-<img src="https://img.shields.io/badge/platform-Desktop%20%7C%20Mobile-3b82f6?style=flat-square" alt="Platform">
+<p align="center">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-c6f135?style=flat-square&labelColor=141416" alt="MIT license"></a>
+  <a href="https://obsidian.md/plugins?id=lemma-flashcards"><img src="https://img.shields.io/badge/dynamic/json?logo=obsidian&logoColor=c6f135&color=c6f135&labelColor=141416&label=obsidian%20downloads&query=%24%5B%27lemma-flashcards%27%5D.downloads&url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-releases%2Fmaster%2Fcommunity-plugin-stats.json&style=flat-square" alt="Obsidian community downloads"></a>
+  <a href="https://github.com/Fundaments-Work/Lemma"><img src="https://img.shields.io/badge/algorithm-FSRS--5-c6f135?style=flat-square&labelColor=141416" alt="Algorithm: FSRS-5"></a>
+  <a href="https://github.com/Fundaments-Work/Lemma"><img src="https://img.shields.io/badge/platform-desktop%20%7C%20mobile-c6f135?style=flat-square&labelColor=141416" alt="Platform: Desktop | Mobile"></a>
+  <a href="https://github.com/Fundaments-Work/Lemma/actions"><img src="https://img.shields.io/github/actions/workflow/status/Fundaments-Work/Lemma/ci.yml?branch=main&label=ci&style=flat-square&labelColor=141416&color=c6f135" alt="CI status"></a>
+  <a href="./CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-c6f135?style=flat-square&labelColor=141416" alt="Pull requests welcome"></a>
+</p>
 
-<br/><br/>
+<p align="center">
+  <a href="https://fundaments.work/docs/lemma/">Docs</a> ·
+  <a href="https://fundaments.work/docs/lemma/guide/flashcards-in-obsidian/">How to make flashcards in Obsidian</a> ·
+  <a href="https://fundaments.work/docs/lemma/guide/compared-with-other-plugins/">Compared with other plugins</a> ·
+  <a href="https://fundaments.work/docs/lemma/compare/vs-anki/">Lemma vs Anki</a> ·
+  <a href="https://buymemomo.com/usefundaments">Buy Me a Momo</a> ·
+  <a href="https://github.com/Fundaments-Work/Lemma/issues/new?labels=bug">Report bug</a> ·
+  <a href="https://github.com/Fundaments-Work/Lemma/issues/new?labels=enhancement">Request feature</a>
+</p>
 
-<p><strong>A modern, FSRS-powered spaced repetition plugin that lives inside your notes.</strong><br>
-No separate app. Write, tag, and study directly where your knowledge lives. Cards stay plain Markdown in your vault; review history stays on your device (or your own CouchDB), with backups one command away.</p>
-
-<p><a href="https://fundaments.work/docs/lemma/">Docs</a> · <a href="https://fundaments.work/docs/lemma/guide/flashcards-in-obsidian/">How to make flashcards in Obsidian</a> · <a href="https://fundaments.work/docs/lemma/guide/compared-with-other-plugins/">Compared with other plugins</a> · <a href="https://fundaments.work/docs/lemma/compare/vs-anki/">Lemma vs Anki</a></p>
-
-<a href="obsidian://show-plugin?id=lemma-flashcards"><img src="https://img.shields.io/badge/Install%20in%20Obsidian-7C3AED?style=for-the-badge&logo=obsidian&logoColor=white" alt="Install in Obsidian"></a>
-&nbsp;
-<a href="https://buymemomo.com/usefundaments"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Momo-C6F135?style=for-the-badge&logoColor=12140F&labelColor=12140F" alt="Buy Me a Momo"></a>
-&nbsp;
-<a href="https://github.com/Fundaments-Work/Lemma/issues/new?labels=bug"><img src="https://img.shields.io/badge/Report%20Issue-ef4444?style=for-the-badge" alt="Report Bug"></a>
-&nbsp;
-<a href="https://github.com/Fundaments-Work/Lemma/issues/new?labels=enhancement"><img src="https://img.shields.io/badge/Request%20Feature-22c55e?style=for-the-badge" alt="Request Feature"></a>
-
-</div>
+<p align="center">
+  <a href="https://buymemomo.com/usefundaments"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Momo-C6F135?style=for-the-badge&logoColor=12140F&labelColor=12140F" alt="Buy Me a Momo"></a>
+  &nbsp;
+  <a href="https://github.com/Fundaments-Work/Lemma/issues/new?labels=bug"><img src="https://img.shields.io/badge/Report%20Issue-ef4444?style=for-the-badge" alt="Report Bug"></a>
+  &nbsp;
+  <a href="https://github.com/Fundaments-Work/Lemma/issues/new?labels=enhancement"><img src="https://img.shields.io/badge/Request%20Feature-22c55e?style=for-the-badge" alt="Request Feature"></a>
+</p>
 
 ---
 
