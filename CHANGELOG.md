@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.2.1] - 2026-10-28
 
-This release adds explicit card ending delimiters, sibling card burying, per-deck frontmatter settings overrides, leech detection, atomic review log batching, and fixes review window button alignment and cloze boundary parsing.
+This release adds explicit card ending delimiters, sibling card burying, per-deck frontmatter settings overrides, leech detection, atomic review log batching, automatic streak and XP recovery from review logs, cloze hint support, and fixes review window button layout, comment-based breadcrumbs, and multi-cloze card formatting.
 
 ### Added
 - **Explicit card delimiter (`---end---` / `---card-end---`):** Multi-line basic cards can explicitly define where the card back ends, preventing headings, subheadings, and notes below the card from being captured into the back. Fully backwards-compatible if omitted.
@@ -12,10 +12,15 @@ This release adds explicit card ending delimiters, sibling card burying, per-dec
 - **Per-deck settings overrides:** Notes can override daily review limits and scheduling retention via YAML frontmatter (`newCardsPerDay`, `reviewsPerDay`, `requestRetention`).
 - **Leech detection:** Automatically detects and displays an unobtrusive warning badge on cards that have lapsed repeatedly, prompting learners to simplify or rewrite them.
 - **Atomic review log batching:** Card state updates and review logs are written together in a single bulk PouchDB transaction, eliminating race conditions and cutting IndexedDB write overhead in half.
+- **Cloze hints:** Added support for cloze hints using `==cN::answer::hint==` syntax, displaying `[hint]` on the front of the card.
+- **Automatic streak and XP recovery:** Automatically reconciles streak and XP counters on startup from durable review history logs in PouchDB, preventing progress loss if local settings are reset or desynchronized.
 
 ### Fixed
+- **Streak and XP loss on reload:** Fixed an issue where review stats and XP were kept only in memory during PouchDB sessions; ratings now immediately persist gamification state to disk, and streaks calculate using local calendar dates rather than UTC timestamps.
+- **Multi-cloze card display:** Inactive cloze markers on multi-cloze cards now render as plain text on the front side instead of exposing raw `==cN::` syntax or highlighted markers.
+- **Breadcrumb code comments:** Code block comments (such as `#` in Python snippets) and frontmatter comments are no longer falsely recognized as Markdown headings.
+- **Review window header button layout:** Removed the redundant close button and aligned the undo, edit, and native modal close buttons cleanly without overlapping.
 - **Cloze boundary leakage:** Fixed an issue where cloze deletions following immediately after `---end---` without an empty blank line erroneously inherited the preceding basic card content and delimiter.
-- **Review window header button alignment:** Fixed an issue where the close cross icon overlapped the edit pencil button in certain themes due to absolute positioning defaults. All header icons are now cleanly aligned flex siblings.
 
 ### Changed
 - **Settings tab clarity:** Reorganized the settings tab into intuitive, task-focused sections with clear descriptions and frontmatter override examples.
