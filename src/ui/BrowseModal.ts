@@ -65,7 +65,16 @@ export class BrowseModal extends Modal {
 
     private async displayCurrentCard() {
         const card = this.cards[this.currentCardIndex];
-        this.titleEl.setText(`Browsing (${this.currentCardIndex + 1}/${this.cards.length})`);
+        this.titleEl.empty();
+        this.titleEl.createSpan({ text: `Browsing (${this.currentCardIndex + 1}/${this.cards.length})` });
+        if (this.plugin.dataManager.isLeech?.(card)) {
+            const lapses = card.fsrsData?.lapses ?? 0;
+            this.titleEl.createSpan({
+                text: `Leech (${lapses} lapses)`,
+                cls: 'fsrs-leech-badge',
+                attr: { title: 'This card has lapsed repeatedly. Consider simplifying, splitting, or rewriting it.' },
+            });
+        }
 
         this.frontEl.empty();
         this.backEl.empty();

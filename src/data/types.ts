@@ -28,6 +28,8 @@ export interface FSRSSettings {
     syncPassword: string;
     usePouchDB: boolean;
     databaseName?: string;
+    burySiblings?: boolean;
+    leechThreshold?: number;
     gamification: Gamification;
 }
 
@@ -50,12 +52,19 @@ export interface Card extends CardData {
     fsrsData?: FSRSData;
 }
 
+export interface DeckSettings {
+    newCardsPerDay?: number;
+    reviewsPerDay?: number;
+    requestRetention?: number;
+}
+
 export interface Deck {
     id: string;
     title: string;
     filePath: string;
     cardIds: Set<string>;
     stats: { new: number; due: number; learning: number };
+    settings?: DeckSettings;
 }
 
 export interface NoteReviewData {

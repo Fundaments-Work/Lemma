@@ -331,6 +331,70 @@ export class PouchDBManager {
         }
     }
 
+    async recordReview(
+        cardId: string,
+        deckId: string,
+        filePath: string,
+        fsrsData: FSRSCard,
+        timestamp: number,
+        rating: Rating
+    ): Promise<void> {
+        const now = new Date().toISOString();
+        let cardDoc: CardStateDoc;
+        try {
+            const existing = await this.db.get<CardStateDoc>(cardId);
+            cardDoc = {
+                ...existing,
+                deckId,
+                filePath,
+                due: fsrsData.due.toISOString(),
+                stability: fsrsData.stability,
+                difficulty: fsrsData.difficulty,
+                elapsed_days: fsrsData.elapsed_days,
+                scheduled_days: fsrsData.scheduled_days,
+                reps: fsrsData.reps,
+                lapses: fsrsData.lapses,
+                state: fsrsData.state,
+                last_review: fsrsData.last_review?.toISOString(),
+                updated_at: now
+            };
+        } catch (err: unknown) {
+            if (getErrorStatus(err) === 404) {
+                cardDoc = {
+                    _id: cardId,
+                    type: 'card_state',
+                    cardId,
+                    deckId,
+                    filePath,
+                    due: fsrsData.due.toISOString(),
+                    stability: fsrsData.stability,
+                    difficulty: fsrsData.difficulty,
+                    elapsed_days: fsrsData.elapsed_days,
+                    scheduled_days: fsrsData.scheduled_days,
+                    reps: fsrsData.reps,
+                    lapses: fsrsData.lapses,
+                    state: fsrsData.state,
+                    last_review: fsrsData.last_review?.toISOString(),
+                    created_at: now,
+                    updated_at: now
+                };
+            } else {
+                throw err;
+            }
+        }
+
+        const logDoc: ReviewLogDoc = {
+            _id: `review_${timestamp}_${cardId}`,
+            type: 'review_log',
+            cardId,
+            timestamp,
+            rating,
+            created_at: now
+        };
+
+        await this.db.bulkDocs([cardDoc, logDoc]);
+    }
+
     async importData(
         states: Array<{ cardId: string; deckId: string; filePath: string; fsrs: FSRSCard }>,
         logs: Array<{ cardId: string; timestamp: number; rating: Rating }>

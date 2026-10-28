@@ -207,6 +207,92 @@ Back only - no front
             await dm.updateFile({ path: 'test-note.md', basename: 'test-note' } as never);
             expect(dm.getAllCards()).toHaveLength(0);
         });
+
+        it('truncates back at explicit ---end--- delimiter and keeps following headings out of card', async () => {
+            const plugin = createMockPlugin();
+            const dm = new DataManager(plugin as never);
+            plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+                tags: [{ tag: '#flashcards', position: { start: { line: 0, col: 0, offset: 0 }, end: { line: 0, col: 0, offset: 0 } } }],
+            });
+            plugin.app.vault.read = vi.fn().mockResolvedValue(`---
+tags: [flashcards]
+---
+
+---card--- ^py-list-02
+How do you access single elements and slices of a list?
+---
+Use indexing: list[0]
+---end---
+
+## 2. Next Section
+This heading and text should not be part of the card!
+`);
+            await dm.updateFile({ path: 'test-note.md', basename: 'test-note' } as never);
+            const cards = dm.getAllCards();
+            expect(cards).toHaveLength(1);
+            expect(cards[0].front).toBe('How do you access single elements and slices of a list?');
+            expect(cards[0].back).toBe('Use indexing: list[0]');
+            expect(cards[0].back).not.toContain('Next Section');
+        });
+
+        it('supports ---card-end--- and case-insensitive whitespace variations', async () => {
+            const plugin = createMockPlugin();
+            const dm = new DataManager(plugin as never);
+            plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+                tags: [{ tag: '#flashcards', position: { start: { line: 0, col: 0, offset: 0 }, end: { line: 0, col: 0, offset: 0 } } }],
+            });
+            plugin.app.vault.read = vi.fn().mockResolvedValue(`---
+tags: [flashcards]
+---
+
+---card--- ^card-1
+Question 1
+---
+Answer 1
+  ---CARD-END---  
+
+Prose notes here
+
+---card--- ^card-2
+Question 2
+---
+Answer 2
+---END---
+`);
+            await dm.updateFile({ path: 'test-note.md', basename: 'test-note' } as never);
+            const cards = dm.getAllCards();
+            expect(cards).toHaveLength(2);
+            expect(cards[0].back).toBe('Answer 1');
+            expect(cards[1].back).toBe('Answer 2');
+        });
+
+        it('preserves legacy behavior when ---end--- is omitted (runs to next card or EOF)', async () => {
+            const plugin = createMockPlugin();
+            const dm = new DataManager(plugin as never);
+            plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+                tags: [{ tag: '#flashcards', position: { start: { line: 0, col: 0, offset: 0 }, end: { line: 0, col: 0, offset: 0 } } }],
+            });
+            plugin.app.vault.read = vi.fn().mockResolvedValue(`---
+tags: [flashcards]
+---
+
+---card--- ^legacy-01
+Question 1
+---
+Answer 1
+Line 2 of answer
+
+---card--- ^legacy-02
+Question 2
+---
+Answer 2
+`);
+            await dm.updateFile({ path: 'test-note.md', basename: 'test-note' } as never);
+            const cards = dm.getAllCards();
+            expect(cards).toHaveLength(2);
+            expect(cards[0].back).toBe('Answer 1\nLine 2 of answer');
+            expect(cards[1].back).toBe('Answer 2');
+        });
     });
 
     describe('Single-line cards (Q::A and Q:::A)', () => {
@@ -345,6 +431,93 @@ The ==c1::mitochondria== is the powerhouse of the ==c2::cell==.
             await dm.updateFile({ path: 'test-note.md', basename: 'test-note' } as never);
             expect(dm.getAllCards()).toHaveLength(2);
             expect(dm.getAllCards().every(c => c.type === 'cloze')).toBe(true);
+        });
+
+        it('does not include basic card content or ---end--- in a cloze card that follows immediately without a blank line', async () => {
+            const plugin = createMockPlugin();
+            const dm = new DataManager(plugin as never);
+            plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+                tags: [{ tag: '#flashcards', position: { start: { line: 0, col: 0, offset: 0 }, end: { line: 0, col: 0, offset: 0 } } }],
+            });
+            plugin.app.vault.read = vi.fn().mockResolvedValue(`---
+tags: [flashcards]
+---
+
+---card--- ^fsrs-b1
+What are basic types?
+---
+| Type | Description |
+| \`int\` | Integer |
+---end---
+Use the ==c1::type()== function to check type. ^fsrs-c1
+`);
+            await dm.updateFile({ path: 'test-note.md', basename: 'test-note' } as never);
+            const cards = dm.getAllCards();
+            expect(cards).toHaveLength(2);
+
+            const basicCard = cards.find(c => c.type === 'basic')!;
+            expect(basicCard.front).toBe('What are basic types?');
+            expect(basicCard.back).toBe('| Type | Description |\n| `int` | Integer |');
+            expect(basicCard.back).not.toContain('---end---');
+
+            const clozeCard = cards.find(c => c.type === 'cloze')!;
+            expect(clozeCard.front).toBe('Use the [...] function to check type. ^fsrs-c1');
+            expect(clozeCard.back).toBe('Use the type() function to check type. ^fsrs-c1');
+            expect(clozeCard.front).not.toContain('---end---');
+            expect(clozeCard.front).not.toContain('What are basic types');
+        });
+
+        it('ignores cloze syntax when inside a basic card block', async () => {
+            const plugin = createMockPlugin();
+            const dm = new DataManager(plugin as never);
+            plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+                tags: [{ tag: '#flashcards', position: { start: { line: 0, col: 0, offset: 0 }, end: { line: 0, col: 0, offset: 0 } } }],
+            });
+            plugin.app.vault.read = vi.fn().mockResolvedValue(`---
+tags: [flashcards]
+---
+
+---card--- ^b2
+Question
+---
+Answer with ==c1::inline notation==
+---end---
+`);
+            await dm.updateFile({ path: 'test-note.md', basename: 'test-note' } as never);
+            const cards = dm.getAllCards();
+            expect(cards).toHaveLength(1);
+            expect(cards[0].type).toBe('basic');
+        });
+
+        it('parses real-world mixed deck with code blocks, tables, and clozes without leakage', async () => {
+            const fs = await import('fs');
+            const realPath = '/home/sapiens/Second Brain/Flashcards/associate data scientist/01 - introduction to python.md';
+            if (!fs.existsSync(realPath)) return;
+            const content = fs.readFileSync(realPath, 'utf8');
+
+            const plugin = createMockPlugin();
+            const dm = new DataManager(plugin as never);
+            plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+                tags: [{ tag: '#flashcards', position: { start: { line: 0, col: 0, offset: 0 }, end: { line: 0, col: 0, offset: 0 } } }],
+            });
+            plugin.app.vault.read = vi.fn().mockResolvedValue(content);
+            await dm.updateFile({ path: realPath, basename: '01 - introduction to python' } as never);
+
+            const cards = dm.getAllCards();
+            expect(cards).toHaveLength(27);
+
+            for (const card of cards) {
+                expect(card.front).not.toMatch(/---\s*(?:end|card-end|card)\s*---/i);
+                expect(card.back).not.toMatch(/---\s*(?:end|card-end|card)\s*---/i);
+            }
+
+            const expCloze = cards.find(c => c.id.includes('fsrs-py1j2k3l4-1'));
+            expect(expCloze).toBeDefined();
+            expect(expCloze!.front).toBe('The [...] operator is used for ==c2::exponentiation== in Python (e.g., `height ==c3::**== 2`). ^fsrs-py1j2k3l4');
+
+            const typeCloze = cards.find(c => c.id.includes('fsrs-py9p0q1r2-1'));
+            expect(typeCloze).toBeDefined();
+            expect(typeCloze!.front).toBe("Use the [...] function to check a variable's type (e.g., `type(bmi)` returns ==c2::`<class 'float'>`==). ^fsrs-py9p0q1r2");
         });
     });
 

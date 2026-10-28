@@ -19,6 +19,8 @@ export const DEFAULT_SETTINGS: FSRSSettings = {
     syncUsername: '',
     syncPassword: '',
     usePouchDB: true,
+    burySiblings: true,
+    leechThreshold: 8,
     gamification: {
         currentStreak: 0,
         longestStreak: 0,

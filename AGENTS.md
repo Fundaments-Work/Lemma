@@ -4,7 +4,7 @@
 
 ```bash
 npm ci
-npm test              # vitest test suite (83 tests)
+npm test              # vitest test suite (98 tests)
 npm run build         # typecheck + bundle
 npm run lint          # eslint with eslint-plugin-obsidianmd
 npm run lint:fix      # auto-fix lint
@@ -133,7 +133,7 @@ Use the 4-tab pattern from `FSRSSettingsTab`:
 - Do not apply `stroke: none` to `svg.lemma-icon` in `styles.css`
 
 ### Card syntax & formats
-1. **Basic**: `---card---` followed by `---` divider
+1. **Basic**: `---card---` followed by `---` divider and optional `---end---`
 2. **Single-line**: `Question::Answer`
 3. **Reversed**: `Question:::Answer`
 4. **Cloze deletion**: `==c1::hidden text==`
@@ -159,7 +159,7 @@ Use the 4-tab pattern from `FSRSSettingsTab`:
 ## Testing
 
 Validate by:
-1. `npm test` (Vitest: 83 tests covering card parsing, data manager, image occlusion, PouchDB persistence, renames, scheduling, undo, backup, import, 1.1.5 data compatibility and the review window)
+1. `npm test` (Vitest: 98 tests covering card parsing, data manager, image occlusion, PouchDB persistence, renames, scheduling, undo, backup, import, 1.1.5 data compatibility and the review window)
 2. `npm run lint` (ESLint: strict Obsidian plugin rules, zero warnings/errors required)
 3. `npm run build` (TypeScript check + esbuild production bundle)
 4. `node deploy.mjs <vault-path>` (deploy to test vault)

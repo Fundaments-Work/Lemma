@@ -80,7 +80,7 @@ class FSRSFlashcardsPlugin extends Plugin {
                 const activeFile = this.app.workspace.getActiveFile();
                 if (activeFile) void this.dataManager.ensureDeckTag(activeFile);
                 const blockId = generateBlockId();
-                const template = `\n\n---card--- ^${blockId}\nQuestion: \n---\nAnswer: \n\n`;
+                const template = `\n\n---card--- ^${blockId}\nQuestion: \n---\nAnswer: \n---end---\n\n`;
                 const cursor = editor.getCursor();
                 editor.replaceRange(template, cursor);
                 editor.setCursor({ line: cursor.line + 3, ch: 10 });
@@ -151,7 +151,7 @@ class FSRSFlashcardsPlugin extends Plugin {
                 const activeFile = this.app.workspace.getActiveFile();
                 if (activeFile) void this.dataManager.ensureDeckTag(activeFile);
                 const blockId = generateBlockId();
-                const template = `\n\n---card--- ?type ^${blockId}\nQuestion: \n---\nAnswer: \n\n`;
+                const template = `\n\n---card--- ?type ^${blockId}\nQuestion: \n---\nAnswer: \n---end---\n\n`;
                 const cursor = editor.getCursor();
                 editor.replaceRange(template, cursor);
                 editor.setCursor({ line: cursor.line + 3, ch: 10 });

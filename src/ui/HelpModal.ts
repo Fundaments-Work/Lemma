@@ -33,7 +33,7 @@ export class HelpModal extends Modal {
             'Cloze deletion cards hide specific words within a sentence.',
             'Use the command palette to insert a card template.',
         ], [
-            'Basic: ---card--- ^id / Front / --- / Back',
+            'Basic: ---card--- ^id / Front / --- / Back / ---end---',
             'Cloze: ==c1::hidden text==',
             'Use block IDs (^unique-id) to preserve review history when editing.',
         ]);

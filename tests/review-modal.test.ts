@@ -98,6 +98,7 @@ describe('ReviewModal card info', () => {
                 getNextReviewIntervals: () => ({ 1: '1d', 2: '2d', 3: '3d', 4: '4d' }),
                 updateCard: vi.fn(),
                 canUndo: () => false,
+                isLeech: () => false,
             },
         };
         const app = { workspace: { openLinkText } };
@@ -210,5 +211,51 @@ describe('ReviewModal learning flow with the real scheduler', () => {
         const input = document.createElement('input');
         keyHandlers[0]({ key: 'z', target: input, shiftKey: false, altKey: false, preventDefault: vi.fn() });
         expect(dm.getReviewHistory()).toHaveLength(1);
+    });
+
+    it('buries unreviewed sibling cards in session queue when a card is rated, and restores on undo', async () => {
+        const clozePara = 'The ==c1::mitochondrion== is the powerhouse of the ==c2::cell==. ^p1';
+        const file = { path: 'Deck.md', basename: 'Deck', stat: { mtime: 1 } };
+        const plugin = {
+            app: {
+                workspace: { openLinkText: vi.fn() },
+                vault: { getMarkdownFiles: () => [file], read: async () => clozePara },
+                metadataCache: { getFileCache: () => ({ frontmatter: { tags: ['flashcards'] } }) },
+            },
+            settings: { ...DEFAULT_SETTINGS, usePouchDB: false, burySiblings: true },
+            loadData: async () => null,
+            saveData: async () => undefined,
+            refreshDashboardView: vi.fn(),
+            dataManager: undefined as unknown as DataManager,
+        };
+        const dm = new DataManager(plugin as never);
+        plugin.dataManager = dm;
+        await dm.buildIndex();
+        const cards = dm.getAllCards();
+        expect(cards).toHaveLength(2);
+
+        const queue = [...cards];
+        const modal = new ReviewModal(plugin.app as never, plugin as never, queue, 'Deck');
+        modal.onOpen();
+        await new Promise((r) => setTimeout(r, 0));
+
+        const click = async (selector: string) => {
+            const el = modal.contentEl.querySelector(selector) as HTMLElement;
+            el?.click();
+            await new Promise((r) => setTimeout(r, 0));
+        };
+
+        expect(queue).toHaveLength(2);
+
+        await click('.fsrs-show-answer-btn');
+        await click('.fsrs-rating-good');
+        // Sibling card 2 should be buried (removed from remaining queue)
+        expect(queue.map((c) => c.id)).not.toContain(cards[1].id);
+
+        const undoBtn = modal.modalEl.querySelector('[aria-label="Undo last rating"]') as HTMLElement;
+        undoBtn.click();
+        await new Promise((r) => setTimeout(r, 0));
+
+        expect(queue).toHaveLength(2);
     });
 });

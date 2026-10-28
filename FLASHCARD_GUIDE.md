@@ -62,6 +62,7 @@ Basic cards have a **front** (question) and **back** (answer).
 Front content here
 ---
 Back content here
+---end---
 ```
 
 ### Examples
@@ -116,6 +117,7 @@ $$6CO_2 + 6H_2O + light \rightarrow C_6H_{12}O_6 + 6O_2$$
 
 - Start with `---card---` (case insensitive)
 - Separate front/back with a single `---` line
+- End the card explicitly with `---end---` (or `---card-end---`) to keep subsequent headings and note text out of the card
 - The `^block-id` is optional but recommended for stable card identities
 
 ---
@@ -194,9 +196,10 @@ Use the command palette: **`Add a new flashcard`**
 This inserts a template with a pre-generated ID:
 ```markdown
 ---card--- ^fsrs-a1b2c3
-
+Question: 
 ---
-
+Answer: 
+---end---
 ```
 
 ### Manual ID Format

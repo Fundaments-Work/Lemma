@@ -133,3 +133,160 @@ describe('re-indexing an edited deck note', () => {
         expect(dm.getAllCards().find((c) => c.id === card.id)?.fsrsData?.reps).toBe(1);
     });
 });
+
+describe('sibling card burying', () => {
+    it('identifies cloze cards in the same paragraph as siblings', async () => {
+        const file = { path: 'Cloze.md', basename: 'Cloze', stat: { mtime: 1 } };
+        const content = 'The ==c1::mitochondrion== is the powerhouse of the ==c2::cell==. ^p1';
+        const plugin = {
+            app: {
+                vault: { getMarkdownFiles: () => [file], read: async () => content },
+                metadataCache: { getFileCache: () => ({ frontmatter: { tags: ['flashcards'] } }) },
+            },
+            settings: { ...DEFAULT_SETTINGS, usePouchDB: false },
+            loadData: async () => null,
+            saveData: async () => undefined,
+        };
+        const dm = new DataManager(plugin as never);
+        await dm.buildIndex();
+        const cards = dm.getAllCards();
+        expect(cards).toHaveLength(2);
+        expect(dm.areSiblings(cards[0], cards[1])).toBe(true);
+        expect(dm.areSiblings(cards[0], cards[0])).toBe(false);
+    });
+
+    it('buries siblings so only one is queued per day when burySiblings is enabled', async () => {
+        const file = { path: 'Cloze.md', basename: 'Cloze', stat: { mtime: 1 } };
+        const content = 'The ==c1::mitochondrion== is the powerhouse of the ==c2::cell==. ^p1\n\nOther ==c1::card== alone.';
+        const plugin = {
+            app: {
+                vault: { getMarkdownFiles: () => [file], read: async () => content },
+                metadataCache: { getFileCache: () => ({ frontmatter: { tags: ['flashcards'] } }) },
+            },
+            settings: { ...DEFAULT_SETTINGS, usePouchDB: false, burySiblings: true },
+            loadData: async () => null,
+            saveData: async () => undefined,
+        };
+        const dm = new DataManager(plugin as never);
+        await dm.buildIndex();
+        const deckId = dm.getDecks()[0].id;
+        const queue = dm.getReviewQueue(deckId);
+        // Out of the 2 cloze siblings + 1 independent card, only 1 sibling + 1 independent card = 2 cards queued
+        expect(queue).toHaveLength(2);
+    });
+
+    it('buries siblings if one was already reviewed earlier today', async () => {
+        const file = { path: 'Cloze.md', basename: 'Cloze', stat: { mtime: 1 } };
+        const content = 'The ==c1::mitochondrion== is the powerhouse of the ==c2::cell==. ^p1';
+        const plugin = {
+            app: {
+                vault: { getMarkdownFiles: () => [file], read: async () => content },
+                metadataCache: { getFileCache: () => ({ frontmatter: { tags: ['flashcards'] } }) },
+            },
+            settings: { ...DEFAULT_SETTINGS, usePouchDB: false, burySiblings: true },
+            loadData: async () => null,
+            saveData: async () => undefined,
+        };
+        const dm = new DataManager(plugin as never);
+        await dm.buildIndex();
+        const deckId = dm.getDecks()[0].id;
+        const cards = dm.getAllCards();
+        // Review the first sibling
+        dm.updateCard(cards[0], Rating.Good);
+
+        // Queue should now bury the second sibling for today
+        const queue = dm.getReviewQueue(deckId);
+        expect(queue).toHaveLength(0);
+    });
+
+    it('does not bury siblings when burySiblings is disabled', async () => {
+        const file = { path: 'Cloze.md', basename: 'Cloze', stat: { mtime: 1 } };
+        const content = 'The ==c1::mitochondrion== is the powerhouse of the ==c2::cell==. ^p1';
+        const plugin = {
+            app: {
+                vault: { getMarkdownFiles: () => [file], read: async () => content },
+                metadataCache: { getFileCache: () => ({ frontmatter: { tags: ['flashcards'] } }) },
+            },
+            settings: { ...DEFAULT_SETTINGS, usePouchDB: false, burySiblings: false },
+            loadData: async () => null,
+            saveData: async () => undefined,
+        };
+        const dm = new DataManager(plugin as never);
+        await dm.buildIndex();
+        const deckId = dm.getDecks()[0].id;
+        const queue = dm.getReviewQueue(deckId);
+        expect(queue).toHaveLength(2);
+    });
+});
+
+describe('Per-deck settings overrides', () => {
+    it('applies frontmatter newCardsPerDay override', async () => {
+        const file = { path: 'CustomDeck.md', basename: 'CustomDeck', stat: { mtime: 1 } };
+        const content = 'Q1::A1\nQ2::A2\nQ3::A3\nQ4::A4\nQ5::A5';
+        const plugin = {
+            app: {
+                vault: { getMarkdownFiles: () => [file], read: async () => content },
+                metadataCache: {
+                    getFileCache: () => ({
+                        frontmatter: { tags: ['flashcards'], newCardsPerDay: 2 },
+                    }),
+                },
+            },
+            settings: { ...DEFAULT_SETTINGS, usePouchDB: false, newCardsPerDay: 20 },
+            loadData: async () => null,
+            saveData: async () => undefined,
+        };
+        const dm = new DataManager(plugin as never);
+        await dm.buildIndex();
+        const deckId = dm.getDecks()[0].id;
+        const queue = dm.getReviewQueue(deckId);
+        expect(queue).toHaveLength(2);
+    });
+
+    it('applies frontmatter requestRetention to card scheduling intervals', async () => {
+        const file = { path: 'HighRetention.md', basename: 'HighRetention', stat: { mtime: 1 } };
+        const content = 'Q1::A1';
+        const plugin = {
+            app: {
+                vault: { getMarkdownFiles: () => [file], read: async () => content },
+                metadataCache: {
+                    getFileCache: () => ({
+                        frontmatter: { tags: ['flashcards'], requestRetention: 0.99 },
+                    }),
+                },
+            },
+            settings: { ...DEFAULT_SETTINGS, usePouchDB: false },
+            loadData: async () => null,
+            saveData: async () => undefined,
+        };
+        const dm = new DataManager(plugin as never);
+        await dm.buildIndex();
+        const card = dm.getAllCards()[0];
+        const intervals = dm.getNextReviewIntervals(card);
+        expect(intervals).toBeDefined();
+    });
+});
+
+describe('Leech detection', () => {
+    it('identifies card as leech when lapses exceed threshold', async () => {
+        const { dm, cards } = await createManager(1, { leechThreshold: 5 });
+        const card = cards[0];
+        expect(dm.isLeech(card)).toBe(false);
+
+        setSchedule(dm, card.id, new Date());
+        card.fsrsData = (dm as unknown as { fsrsDataStore: Record<string, FSRSCard> }).fsrsDataStore[card.id];
+        card.fsrsData.lapses = 5;
+
+        expect(dm.isLeech(card)).toBe(true);
+    });
+
+    it('returns false when leech detection is disabled (threshold = 0)', async () => {
+        const { dm, cards } = await createManager(1, { leechThreshold: 0 });
+        const card = cards[0];
+        setSchedule(dm, card.id, new Date());
+        card.fsrsData = (dm as unknown as { fsrsDataStore: Record<string, FSRSCard> }).fsrsDataStore[card.id];
+        card.fsrsData.lapses = 10;
+
+        expect(dm.isLeech(card)).toBe(false);
+    });
+});

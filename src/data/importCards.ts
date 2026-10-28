@@ -77,7 +77,7 @@ function cardMarkdown(card: ImportedCard, id: string): string {
     if (!multiline && !unsafe) return `${card.front}::${card.back} ^${id}`;
     // The single-line parser also scans lines inside a block card, so "::" is split with a zero-width space.
     const safe = (v: string) => v.replace(/::/g, ':\u200B:');
-    return `---card--- ^${id}\n${safe(card.front)}\n---\n${safe(card.back)}`;
+    return `---card--- ^${id}\n${safe(card.front)}\n---\n${safe(card.back)}\n---end---`;
 }
 
 // Accepts an Anki "Notes in Plain Text" export or a CSV/TSV file. The first column is the front and the

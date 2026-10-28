@@ -53,11 +53,91 @@ export class FSRSSettingsTab extends PluginSettingTab {
     }
 
     private renderGeneralTab(containerEl: HTMLElement) {
-        new Setting(containerEl).setName('Database').setHeading();
+        new Setting(containerEl).setName('Review defaults').setHeading();
+
+        new Setting(containerEl)
+            .setName('Max new cards per day')
+            .setDesc('Default limit of new cards to introduce each day per deck. You can override this per note using frontmatter (e.g. newCardsPerDay: 15).')
+            .addText((text) => text
+                .setValue(this.plugin.settings.newCardsPerDay.toString())
+                .onChange(async (value) => {
+                    const num = parseInt(value, 10);
+                    if (!isNaN(num) && num >= 0) {
+                        this.plugin.settings.newCardsPerDay = num;
+                        await this.plugin.saveSettings();
+                    }
+                }));
+
+        new Setting(containerEl)
+            .setName('Max reviews per day')
+            .setDesc('Default limit of review cards per day per deck. You can override this per note using frontmatter (e.g. reviewsPerDay: 50).')
+            .addText((text) => text
+                .setValue(this.plugin.settings.reviewsPerDay.toString())
+                .onChange(async (value) => {
+                    const num = parseInt(value, 10);
+                    if (!isNaN(num) && num >= 0) {
+                        this.plugin.settings.reviewsPerDay = num;
+                        await this.plugin.saveSettings();
+                    }
+                }));
+
+        new Setting(containerEl)
+            .setName('Bury siblings until next day')
+            .setDesc('When studying, defer sibling cards (such as other cloze deletions from the same note) until the next day to prevent recall cues.')
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.burySiblings ?? true)
+                .onChange(async (value) => {
+                    this.plugin.settings.burySiblings = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Leech threshold')
+            .setDesc('Number of lapses (forgetting a card) before displaying a leech warning during review and browsing. Set to 0 to disable.')
+            .addText((text) => text
+                .setValue((this.plugin.settings.leechThreshold ?? 8).toString())
+                .onChange(async (value) => {
+                    const num = parseInt(value, 10);
+                    if (!isNaN(num) && num >= 0) {
+                        this.plugin.settings.leechThreshold = num;
+                        await this.plugin.saveSettings();
+                    }
+                }));
+
+        new Setting(containerEl).setName('Deck organization').setHeading();
+
+        new Setting(containerEl)
+            .setName('Deck tag')
+            .setDesc('The tag used to identify deck notes (e.g. "flashcards" for #flashcards). Any note with this tag is recognized as a deck.')
+            .addText((text) => text
+                .setPlaceholder('Flashcards')
+                .setValue(this.plugin.settings.deckTag)
+                .onChange(async (value) => {
+                    this.plugin.settings.deckTag = value.trim();
+                    await this.plugin.saveSettings();
+                    await this.plugin.dataManager.buildIndex();
+                    this.plugin.refreshDashboardView();
+                }));
+
+        new Setting(containerEl).setName('Appearance').setHeading();
+
+        new Setting(containerEl)
+            .setName('Review font size')
+            .setDesc('Text font size in the flashcard review window.')
+            .addSlider((slider) => slider
+                .setLimits(12, 32, 1)
+                .setValue(this.plugin.settings.fontSize)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.fontSize = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl).setName('Storage and database').setHeading();
 
         new Setting(containerEl)
             .setName('Use PouchDB (IndexedDB)')
-            .setDesc('Use PouchDB for local storage instead of JSON files. Better performance for large collections (10k+ cards).')
+            .setDesc('Store review progress in high-performance browser storage (IndexedDB) instead of a single data.json file. Recommended for vaults with over 500 cards or when using sync.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.usePouchDB)
                 .onChange(async (value) => {
@@ -75,62 +155,6 @@ export class FSRSSettingsTab extends PluginSettingTab {
                 .setCta()
                 .onClick(async () => {
                     await this.migrateData();
-                }));
-
-        new Setting(containerEl).setName('Deck tag').setHeading();
-
-        new Setting(containerEl)
-            .setName('Deck tag')
-            .setDesc('The tag used to identify deck files (for example, "flashcards" for #flashcards).')
-            .addText((text) => text
-                .setPlaceholder('Flashcards')
-                .setValue(this.plugin.settings.deckTag)
-                .onChange(async (value) => {
-                    this.plugin.settings.deckTag = value.trim();
-                    await this.plugin.saveSettings();
-                    await this.plugin.dataManager.buildIndex();
-                    this.plugin.refreshDashboardView();
-                }));
-
-        new Setting(containerEl).setName('Global review defaults').setHeading();
-
-        new Setting(containerEl)
-            .setName('Max new cards per day')
-            .setDesc('Applies to each deck separately.')
-            .addText((text) => text
-                .setValue(this.plugin.settings.newCardsPerDay.toString())
-                .onChange(async (value) => {
-                    const num = parseInt(value, 10);
-                    if (!isNaN(num) && num >= 0) {
-                        this.plugin.settings.newCardsPerDay = num;
-                        await this.plugin.saveSettings();
-                    }
-                }));
-
-        new Setting(containerEl)
-            .setName('Max reviews per day')
-            .setDesc('Applies to all decks.')
-            .addText((text) => text
-                .setValue(this.plugin.settings.reviewsPerDay.toString())
-                .onChange(async (value) => {
-                    const num = parseInt(value, 10);
-                    if (!isNaN(num) && num >= 0) {
-                        this.plugin.settings.reviewsPerDay = num;
-                        await this.plugin.saveSettings();
-                    }
-                }));
-
-        new Setting(containerEl).setName('Appearance').setHeading();
-
-        new Setting(containerEl)
-            .setName('Review font size')
-            .addSlider((slider) => slider
-                .setLimits(12, 32, 1)
-                .setValue(this.plugin.settings.fontSize)
-                .setDynamicTooltip()
-                .onChange(async (value) => {
-                    this.plugin.settings.fontSize = value;
-                    await this.plugin.saveSettings();
                 }));
 
         new Setting(containerEl).setName('Reset progress').setHeading();
@@ -262,7 +286,7 @@ export class FSRSSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Request retention')
-            .setDesc('The share of cards you want to remember when they come due, between 0 and 1. Values from 0.7 to 0.99 work best.')
+            .setDesc('Target recall probability when a card is due (0.7 to 0.99). Higher values (e.g. 0.90 = 90%) create shorter intervals and more frequent reviews; lower values yield longer intervals. Override per note via frontmatter (e.g. requestRetention: 0.85).')
             .addText((text) => text
                 .setValue(this.plugin.settings.fsrsParams.request_retention.toString())
                 .onChange(async (value) => {
@@ -276,7 +300,7 @@ export class FSRSSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Maximum interval')
-            .setDesc('The maximum number of days between reviews.')
+            .setDesc('The maximum scheduling interval in days between reviews (default: 36500 days = 100 years).')
             .addText((text) => text
                 .setValue(this.plugin.settings.fsrsParams.maximum_interval.toString())
                 .onChange(async (value) => {
@@ -290,7 +314,7 @@ export class FSRSSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('FSRS weights')
-            .setDesc('Comma-separated FSRS weights (19 values).')
+            .setDesc('FSRS model parameters (19 numbers) determining memory stability and difficulty. Can be automatically tuned with the optimizer below.')
             .addTextArea((text) => {
                 text.setValue(this.plugin.settings.fsrsParams.w.join(', '))
                     .onChange(async (value) => {
@@ -372,7 +396,7 @@ export class FSRSSettingsTab extends PluginSettingTab {
         const cardBox = containerEl.createDiv({ cls: 'lemma-about-cheatsheet' });
         const cardGrid = cardBox.createDiv({ cls: 'lemma-about-grid' });
         const cardFormats: [string, string][] = [
-            ['Basic block', '---card--- ^id \n Question \n --- \n Answer'],
+            ['Basic block', '---card--- ^id \n Question \n --- \n Answer \n ---end---'],
             ['Single-line', 'Question::Answer ^id'],
             ['Reversed', 'Question:::Answer ^id (bidirectional)'],
             ['Cloze deletion', 'Sentence with ==c1::hidden text=='],

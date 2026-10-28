@@ -7,6 +7,7 @@
 <br/><br/>
 
 <img src="https://img.shields.io/badge/Obsidian-Plugin-7C3AED?style=flat-square&logo=obsidian&logoColor=white" alt="Obsidian Plugin">
+<img src="https://img.shields.io/badge/dynamic/json?logo=obsidian&color=7C3AED&label=downloads&query=%24%5B%27lemma-flashcards%27%5D.downloads&url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-releases%2Fmaster%2Fcommunity-plugin-stats.json&style=flat-square" alt="Downloads">
 <img src="https://img.shields.io/github/v/release/Fundaments-Work/Lemma?style=flat-square&color=7C3AED&label=version" alt="Version">
 <img src="https://img.shields.io/github/license/Fundaments-Work/Lemma?style=flat-square&color=22c55e" alt="MIT License">
 <img src="https://img.shields.io/badge/algorithm-FSRS--5-f59e0b?style=flat-square" alt="FSRS">
@@ -146,13 +147,14 @@ A learning technique that schedules reviews at increasing intervals to maximize 
 Lemma supports seven card and study formats:
 
 ### 1. Basic Multi-Line Cards
-Multi-line format with full Markdown, LaTeX math blocks, and code formatting.
+Multi-line format with full Markdown, LaTeX math blocks, and code formatting. Use `---end---` to explicitly close the card so subsequent headings or notes remain outside the answer.
 
 ````markdown
 ---card--- ^basic-001
 What is the function of the ribosome?
 ---
 Protein synthesis via translation of mRNA.
+---end---
 ````
 
 ### 2. Single-Line Cards

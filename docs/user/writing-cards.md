@@ -13,17 +13,17 @@ A basic card is a block with a front and a back, separated by a line containing 
 What is the function of the ribosome?
 ---
 Protein synthesis via translation of mRNA.
+---end---
 ```
 
 Rules the parser follows:
 
 - The block starts with `---card---`. The match is case-insensitive.
-- The front is everything up to the first line that is exactly `---`. The back is everything after it, up to the next `---card---` or the end of the note.
+- The front is everything up to the first line that is exactly `---`. The back is everything after it, up to an explicit `---end---`, the next `---card---` or the end of the note.
+- An optional `---end---` (or `---card-end---`) explicitly closes the card so subsequent headings, subheadings, and notes remain outside the answer.
 - Front and back can hold any Markdown: lists, math, code, tables, images, links and callouts. They are rendered with Obsidian's own Markdown renderer.
 - The optional `^block-id` goes at the end of the front section. See [Block IDs](#block-ids-and-review-history).
 - A card with an empty front or empty back is ignored.
-
-Because the back runs until the next card block, put a blank line and your next `---card---` after each card. Text you write after a card's back, such as ordinary notes, becomes part of that back.
 
 ## Single-line cards
 

@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2026-10-28
+
+This release adds explicit card ending delimiters, sibling card burying, per-deck frontmatter settings overrides, leech detection, atomic review log batching, and fixes review window button alignment and cloze boundary parsing.
+
+### Added
+- **Explicit card delimiter (`---end---` / `---card-end---`):** Multi-line basic cards can explicitly define where the card back ends, preventing headings, subheadings, and notes below the card from being captured into the back. Fully backwards-compatible if omitted.
+- **Sibling card burying:** Automatically defers sibling cards (such as other cloze deletions from the same note or cards sharing a block ID prefix) until the next day to prevent recall cues during study. Can be toggled in settings.
+- **Per-deck settings overrides:** Notes can override daily review limits and scheduling retention via YAML frontmatter (`newCardsPerDay`, `reviewsPerDay`, `requestRetention`).
+- **Leech detection:** Automatically detects and displays an unobtrusive warning badge on cards that have lapsed repeatedly, prompting learners to simplify or rewrite them.
+- **Atomic review log batching:** Card state updates and review logs are written together in a single bulk PouchDB transaction, eliminating race conditions and cutting IndexedDB write overhead in half.
+
+### Fixed
+- **Cloze boundary leakage:** Fixed an issue where cloze deletions following immediately after `---end---` without an empty blank line erroneously inherited the preceding basic card content and delimiter.
+- **Review window header button alignment:** Fixed an issue where the close cross icon overlapped the edit pencil button in certain themes due to absolute positioning defaults. All header icons are now cleanly aligned flex siblings.
+
+### Changed
+- **Settings tab clarity:** Reorganized the settings tab into intuitive, task-focused sections with clear descriptions and frontmatter override examples.
+
 ## [1.2.0] - 2026-10-20
 
 This release fixes several problems that made progress look lost, and adds undo, backup and card import. It was tested against data written by 1.1.5, including a copy of a real Obsidian database, and no existing data is moved, renamed or deleted.

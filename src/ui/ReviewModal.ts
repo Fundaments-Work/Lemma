@@ -83,6 +83,12 @@ export class ReviewModal extends Modal {
         const headerControls = this.modalEl.querySelector('.modal-header-controls')
             ?? this.modalEl.querySelector('.modal-header')?.createDiv({ cls: 'fsrs-header-actions' });
         if (headerControls) {
+            this.undoButton = headerControls.createDiv({ cls: 'clickable-icon' });
+            setIcon(this.undoButton, 'undo-2');
+            this.undoButton.setAttribute('aria-label', 'Undo last rating');
+            this.undoButton.addEventListener('click', () => this.undoRating());
+            this.updateUndoButton();
+
             const editBtn = headerControls.createDiv({ cls: 'clickable-icon' });
             setIcon(editBtn, 'pencil');
             editBtn.setAttribute('aria-label', 'Edit this card');
@@ -91,14 +97,11 @@ export class ReviewModal extends Modal {
                 void this.app.workspace.openLinkText(filePath, filePath);
                 this.close();
             });
-            headerControls.prepend(editBtn);
 
-            this.undoButton = headerControls.createDiv({ cls: 'clickable-icon' });
-            setIcon(this.undoButton, 'undo-2');
-            this.undoButton.setAttribute('aria-label', 'Undo last rating');
-            this.undoButton.addEventListener('click', () => this.undoRating());
-            headerControls.prepend(this.undoButton);
-            this.updateUndoButton();
+            const closeBtn = headerControls.createDiv({ cls: 'clickable-icon' });
+            setIcon(closeBtn, 'x');
+            closeBtn.setAttribute('aria-label', 'Close');
+            closeBtn.addEventListener('click', () => this.close());
         }
 
         const container = this.contentEl.createDiv({ cls: 'fsrs-review-container' });
@@ -311,6 +314,14 @@ export class ReviewModal extends Modal {
         this.titleEl.empty();
         this.titleEl.createSpan({ text: deckPrefix });
         this.titleEl.createSpan({ text: `${this.currentCardIndex + 1}/${this.queue.length}`, cls: 'fsrs-counter-badge' });
+        if (this.plugin.dataManager.isLeech?.(card)) {
+            const lapses = card.fsrsData?.lapses ?? 0;
+            this.titleEl.createSpan({
+                text: `Leech (${lapses} lapses)`,
+                cls: 'fsrs-leech-badge',
+                attr: { title: 'This card has lapsed repeatedly. Consider simplifying, splitting, or rewriting it.' },
+            });
+        }
 
         this.frontEl.empty();
         this.backEl.empty();
@@ -380,6 +391,8 @@ export class ReviewModal extends Modal {
         }
     }
 
+    private buriedStack: Array<{ cardId: string; siblings: Card[] }> = [];
+
     private handleRating(rating: Rating) {
         const card = this.getCurrentCard();
         this.plugin.dataManager.updateCard(card, rating);
@@ -389,6 +402,20 @@ export class ReviewModal extends Modal {
             const at = Math.min(this.queue.length, this.currentCardIndex + 1 + REQUEUE_GAP);
             this.queue.splice(at, 0, card);
         }
+
+        if (this.plugin.settings.burySiblings) {
+            const siblings: Card[] = [];
+            for (let i = this.queue.length - 1; i > this.currentCardIndex; i--) {
+                if (this.plugin.dataManager.areSiblings(card, this.queue[i])) {
+                    siblings.push(this.queue[i]);
+                    this.queue.splice(i, 1);
+                }
+            }
+            if (siblings.length > 0) {
+                this.buriedStack.push({ cardId: card.id, siblings });
+            }
+        }
+
         this.currentCardIndex++;
         this.updateUndoButton();
         void this.showNextCard();
@@ -401,6 +428,14 @@ export class ReviewModal extends Modal {
         this.currentCardIndex--;
         const duplicate = this.queue.indexOf(card, this.currentCardIndex + 1);
         if (duplicate > this.currentCardIndex) this.queue.splice(duplicate, 1);
+
+        if (this.buriedStack.length > 0 && this.buriedStack[this.buriedStack.length - 1].cardId === card.id) {
+            const entry = this.buriedStack.pop();
+            if (entry) {
+                this.queue.push(...entry.siblings);
+            }
+        }
+
         this.updateUndoButton();
         void this.showNextCard();
     }

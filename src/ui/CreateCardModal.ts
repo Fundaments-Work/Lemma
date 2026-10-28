@@ -193,12 +193,12 @@ export class CreateCardModal extends Modal {
         if (this.cardType === 'typein') {
             const q = this.frontText.trim() || 'Question';
             const a = this.backText.trim() || 'Answer';
-            return `\n---card--- ?type ^${blockId}\n${q}\n---\n${a}\n`;
+            return `\n---card--- ?type ^${blockId}\n${q}\n---\n${a}\n---end---\n`;
         }
 
         const q = this.frontText.trim() || 'Question';
         const a = this.backText.trim() || 'Answer';
-        return `\n---card--- ^${blockId}\n${q}\n---\n${a}\n`;
+        return `\n---card--- ^${blockId}\n${q}\n---\n${a}\n---end---\n`;
     }
 
     private updatePreview() {

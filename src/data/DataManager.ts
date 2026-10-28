@@ -1,6 +1,6 @@
 import { FSRS, Rating, State, createEmptyCard, type Card as FSRSCard } from 'ts-fsrs';
 import { Notice, TFile, type CachedMetadata } from 'obsidian';
-import type { Card, Deck, FSRSData, FSRSParameters, Gamification, NoteReviewData, PluginData, ReviewLog } from './types';
+import type { Card, Deck, DeckSettings, FSRSData, FSRSParameters, Gamification, NoteReviewData, PluginData, ReviewLog } from './types';
 import { isRecord, cyrb53hex, LEGACY_DATABASE_NAME, getDocsWritten, getErrorMessage, isLikelyCorsOrNetworkErrorMessage, buildAuthenticatedUrl, sanitizeUrlForDisplay } from './constants';
 import { PouchDBManager } from '../database/PouchDBManager';
 import { buildBackup, type BackupContent } from './backup';
@@ -333,14 +333,15 @@ export class DataManager {
             this.dropDeckCards(deckId);
             const frontmatter = isRecord(cache?.frontmatter) ? cache.frontmatter : null;
             const title = frontmatter && typeof frontmatter.title === 'string' ? frontmatter.title : file.basename;
-            const newDeck: Deck = { id: deckId, title, filePath: file.path, cardIds: new Set(), stats: { new: 0, due: 0, learning: 0 } };
+            const settings = this.parseDeckSettings(frontmatter);
+            const newDeck: Deck = { id: deckId, title, filePath: file.path, cardIds: new Set(), stats: { new: 0, due: 0, learning: 0 }, settings };
             const content = await this.plugin.app.vault.read(file);
             const lines = content.split('\n');
             const breadcrumbs = this.buildHeadingBreadcrumbs(lines);
 
-            this.parseBasicCards(content, breadcrumbs, file.path, deckId, newDeck);
-            this.parseSingleLineCards(lines, breadcrumbs, file.path, deckId, newDeck);
-            this.parseClozeCards(content, breadcrumbs, file.path, deckId, newDeck);
+            const inBasicCard = this.parseBasicCards(content, lines, breadcrumbs, file.path, deckId, newDeck);
+            this.parseSingleLineCards(lines, breadcrumbs, file.path, deckId, newDeck, inBasicCard);
+            this.parseClozeCards(content, lines, breadcrumbs, file.path, deckId, newDeck, inBasicCard);
 
             if (newDeck.cardIds.size > 0) this.decks.set(deckId, newDeck);
             stateChanged = true;
@@ -397,14 +398,66 @@ export class DataManager {
         return true;
     }
 
-    private parseSingleLineCards(lines: string[], breadcrumbs: (string | undefined)[], filePath: string, deckId: string, newDeck: Deck) {
+    private parseDeckSettings(frontmatter: Record<string, unknown> | null): DeckSettings | undefined {
+        if (!frontmatter) return undefined;
+
+        let newCardsPerDay: number | undefined;
+        let reviewsPerDay: number | undefined;
+        let requestRetention: number | undefined;
+
+        const rawNew = frontmatter.newCardsPerDay ?? frontmatter['new-cards-per-day'] ?? frontmatter.new_cards_per_day ?? frontmatter.newLimit;
+        if (typeof rawNew === 'number' && rawNew >= 0) {
+            newCardsPerDay = rawNew;
+        } else if (typeof rawNew === 'string') {
+            const parsed = parseInt(rawNew, 10);
+            if (!isNaN(parsed) && parsed >= 0) newCardsPerDay = parsed;
+        }
+
+        const rawReviews = frontmatter.reviewsPerDay ?? frontmatter['reviews-per-day'] ?? frontmatter.reviews_per_day ?? frontmatter.reviewLimit;
+        if (typeof rawReviews === 'number' && rawReviews >= 0) {
+            reviewsPerDay = rawReviews;
+        } else if (typeof rawReviews === 'string') {
+            const parsed = parseInt(rawReviews, 10);
+            if (!isNaN(parsed) && parsed >= 0) reviewsPerDay = parsed;
+        }
+
+        const rawRetention = frontmatter.requestRetention ?? frontmatter['request-retention'] ?? frontmatter.request_retention ?? frontmatter.retention ?? frontmatter['fsrs-retention'];
+        if (typeof rawRetention === 'number' && rawRetention > 0 && rawRetention < 1) {
+            requestRetention = rawRetention;
+        } else if (typeof rawRetention === 'string') {
+            const parsed = parseFloat(rawRetention);
+            if (!isNaN(parsed) && parsed > 0 && parsed < 1) requestRetention = parsed;
+        }
+
+        if (newCardsPerDay === undefined && reviewsPerDay === undefined && requestRetention === undefined) {
+            return undefined;
+        }
+
+        return { newCardsPerDay, reviewsPerDay, requestRetention };
+    }
+
+    private getFsrsForCard(card?: Card): FSRS {
+        if (!card) return this.fsrs;
+        const deck = this.decks.get(card.deckId);
+        const retention = deck?.settings?.requestRetention;
+        if (retention !== undefined && retention !== this.plugin.settings.fsrsParams.request_retention) {
+            return new FSRS({
+                ...this.plugin.settings.fsrsParams,
+                request_retention: retention,
+            });
+        }
+        return this.fsrs;
+    }
+
+    private parseSingleLineCards(lines: string[], breadcrumbs: (string | undefined)[], filePath: string, deckId: string, newDeck: Deck, inBasicCard?: boolean[]) {
         for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+            if (inBasicCard && inBasicCard[lineIdx]) continue;
             const line = lines[lineIdx];
             const trimmed = line.trim();
             if (!trimmed) continue;
 
-            // Skip lines that are part of ---card--- blocks (inside frontmatter)
-            if (trimmed.startsWith('---card---') || trimmed === '---') continue;
+            // Skip lines that are part of card delimiters
+            if (trimmed.startsWith('---card---') || trimmed.startsWith('---end---') || trimmed.startsWith('---card-end---') || trimmed === '---') continue;
 
             // Skip lines that contain cloze syntax (==c#::)
             if (/==c\d+::/.test(trimmed)) continue;
@@ -473,14 +526,58 @@ export class DataManager {
         }
     }
 
-    private parseBasicCards(content: string, breadcrumbs: (string | undefined)[], filePath: string, deckId: string, newDeck: Deck) {
-        const basicCardsRaw = content.split(/---\s*card\s*---/i).slice(1);
-        for (const cardRaw of basicCardsRaw) {
-            const parts = cardRaw.split(/\n---\n/);
-            if (parts.length < 2) continue;
+    private parseBasicCards(content: string, lines: string[], breadcrumbs: (string | undefined)[], filePath: string, deckId: string, newDeck: Deck): boolean[] {
+        const inBasicCard = new Array<boolean>(lines.length).fill(false);
+        const cardBlocks: Array<{ startLine: number; endLine: number; lines: string[] }> = [];
 
-            const frontPart = parts[0];
-            const backPart = parts.slice(1).join('\n---\n');
+        let currentStart = -1;
+        let currentCardLines: string[] = [];
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+
+            if (/^---\s*card\s*---/i.test(trimmed)) {
+                if (currentStart !== -1) {
+                    cardBlocks.push({ startLine: currentStart, endLine: i - 1, lines: currentCardLines });
+                    currentCardLines = [];
+                }
+                currentStart = i;
+                inBasicCard[i] = true;
+                currentCardLines.push(line);
+            } else if (currentStart !== -1) {
+                inBasicCard[i] = true;
+                currentCardLines.push(line);
+                if (/^---\s*(?:end|card-end)\s*---$/i.test(trimmed)) {
+                    cardBlocks.push({ startLine: currentStart, endLine: i, lines: currentCardLines });
+                    currentStart = -1;
+                    currentCardLines = [];
+                }
+            }
+        }
+        if (currentStart !== -1 && currentCardLines.length > 0) {
+            cardBlocks.push({ startLine: currentStart, endLine: lines.length - 1, lines: currentCardLines });
+        }
+
+        for (const block of cardBlocks) {
+            const blockText = block.lines.join('\n');
+            const match = blockText.match(/^[ \t]*---\s*card\s*---[ \t]*(.*)$/im);
+            if (!match) continue;
+
+            const afterCardHeader = match[1].trim();
+            const restOfBlock = blockText.slice(match.index! + match[0].length);
+            const cardBody = afterCardHeader ? (afterCardHeader + '\n' + restOfBlock) : restOfBlock;
+
+            const dividerMatch = cardBody.match(/(?:^|\r?\n)[ \t]*---[ \t]*(?:\r?\n|$)/);
+            if (!dividerMatch || dividerMatch.index === undefined) continue;
+
+            const frontPart = cardBody.slice(0, dividerMatch.index);
+            let backPart = cardBody.slice(dividerMatch.index + dividerMatch[0].length);
+
+            const endMatch = backPart.match(/(?:^|\r?\n)[ \t]*---\s*(?:end|card-end)\s*---[ \t]*(?:\r?\n|$)/i);
+            if (endMatch && endMatch.index !== undefined) {
+                backPart = backPart.slice(0, endMatch.index);
+            }
 
             const isTypeIn = /\?type\b/.test(frontPart);
             const cleanFront = frontPart.replace(/\?type\b\s*/g, '').trim();
@@ -499,14 +596,14 @@ export class DataManager {
             const back = backPart.trim();
             if (!front || !back) continue;
 
-            const context = this.findCardContext(content, breadcrumbs, cardRaw);
+            const context = breadcrumbs[block.startLine] ?? this.findCardContext(content, breadcrumbs, blockText);
 
             const card: Card = {
                 id: cardId,
                 deckId,
                 filePath,
                 type: isTypeIn ? 'typein' : 'basic',
-                originalText: cardRaw,
+                originalText: blockText,
                 front,
                 back,
                 context,
@@ -515,20 +612,49 @@ export class DataManager {
             this.cards.set(cardId, card);
             newDeck.cardIds.add(cardId);
         }
+
+        return inBasicCard;
     }
 
-    private parseClozeCards(content: string, breadcrumbs: (string | undefined)[], filePath: string, deckId: string, newDeck: Deck) {
-        const paragraphs = content.split(/\n\s*\n/);
+    private parseClozeCards(content: string, lines: string[], breadcrumbs: (string | undefined)[], filePath: string, deckId: string, newDeck: Deck, inBasicCard?: boolean[]) {
+        const nonBasicParagraphs: Array<{ text: string; startLine: number }> = [];
+        let curParaLines: string[] = [];
+        let curParaStart = -1;
 
-        for (const paragraph of paragraphs) {
+        for (let i = 0; i < lines.length; i++) {
+            if (inBasicCard && inBasicCard[i]) {
+                if (curParaLines.length > 0) {
+                    nonBasicParagraphs.push({ text: curParaLines.join('\n'), startLine: curParaStart });
+                    curParaLines = [];
+                    curParaStart = -1;
+                }
+                continue;
+            }
+            const line = lines[i];
+            const trimmed = line.trim();
+            if (!trimmed || /^---\s*(?:end|card-end|card)\s*---$/i.test(trimmed) || trimmed === '---') {
+                if (curParaLines.length > 0) {
+                    nonBasicParagraphs.push({ text: curParaLines.join('\n'), startLine: curParaStart });
+                    curParaLines = [];
+                    curParaStart = -1;
+                }
+            } else {
+                if (curParaLines.length === 0) curParaStart = i;
+                curParaLines.push(line);
+            }
+        }
+        if (curParaLines.length > 0) {
+            nonBasicParagraphs.push({ text: curParaLines.join('\n'), startLine: curParaStart });
+        }
+
+        for (const { text: paragraph, startLine } of nonBasicParagraphs) {
             const clozeRegex = /==c(\d+)::(.*?)==/gs;
             const clozes = [...paragraph.matchAll(clozeRegex)];
 
             if (clozes.length === 0) continue;
 
             const blockIdMatch = paragraph.match(/\^([a-zA-Z0-9-]+)\s*$/);
-
-            const context = this.findCardContext(content, breadcrumbs, paragraph);
+            const context = breadcrumbs[startLine] ?? this.findCardContext(content, breadcrumbs, paragraph);
 
             clozes.forEach(cloze => {
                 const clozeNum = cloze[1];
@@ -541,8 +667,8 @@ export class DataManager {
                     cardId = cyrb53hex(`${filePath}::${paragraph}::${clozeNum}`);
                 }
 
-                const front = paragraph.replace(originalCloze, '[...]');
-                const back = paragraph.replace(/==c\d+::(.*?)==/g, '$1');
+                const front = paragraph.replace(originalCloze, '[...]').trim();
+                const back = paragraph.replace(/==c\d+::(.*?)==/g, '$1').trim();
 
                 const card: Card = {
                     id: cardId,
@@ -590,9 +716,9 @@ export class DataManager {
         const realCards = this.cards;
         this.cards = new Map();
         try {
-            this.parseBasicCards(content, breadcrumbs, filePath, deckId, scratch);
-            this.parseSingleLineCards(lines, breadcrumbs, filePath, deckId, scratch);
-            this.parseClozeCards(content, breadcrumbs, filePath, deckId, scratch);
+            const inBasicCard = this.parseBasicCards(content, lines, breadcrumbs, filePath, deckId, scratch);
+            this.parseSingleLineCards(lines, breadcrumbs, filePath, deckId, scratch, inBasicCard);
+            this.parseClozeCards(content, lines, breadcrumbs, filePath, deckId, scratch, inBasicCard);
         } finally {
             this.cards = realCards;
         }
@@ -717,6 +843,29 @@ export class DataManager {
         return count;
     }
 
+    areSiblings(cardA: Card, cardB: Card): boolean {
+        if (cardA.id === cardB.id) return false;
+        if (cardA.filePath !== cardB.filePath) return false;
+
+        if (cardA.originalText && cardB.originalText && cardA.originalText === cardB.originalText) {
+            return true;
+        }
+
+        if (cardA.id.includes('::') && cardB.id.includes('::')) {
+            const baseA = cardA.id.replace(/-\d+$/, '');
+            const baseB = cardB.id.replace(/-\d+$/, '');
+            if (baseA === baseB) return true;
+        }
+
+        return false;
+    }
+
+    isLeech(card: Card): boolean {
+        const threshold = this.plugin.settings.leechThreshold ?? 8;
+        if (threshold <= 0) return false;
+        return (card.fsrsData?.lapses ?? 0) >= threshold;
+    }
+
     getReviewQueue(deckId: string): Card[] {
         const deck = this.decks.get(deckId);
         if (!deck) return [];
@@ -744,13 +893,38 @@ export class DataManager {
             !c.fsrsData || c.fsrsData.state === State.New
         );
 
-        const reviewsRemaining = Math.max(0, this.plugin.settings.reviewsPerDay - this.getReviewedTodayCount(deckId));
-        const newCardsRemaining = Math.max(0, this.plugin.settings.newCardsPerDay - newIntroducedToday);
+        const deckMaxReviews = deck.settings?.reviewsPerDay ?? this.plugin.settings.reviewsPerDay;
+        const deckMaxNew = deck.settings?.newCardsPerDay ?? this.plugin.settings.newCardsPerDay;
 
-        return [
+        const reviewsRemaining = Math.max(0, deckMaxReviews - this.getReviewedTodayCount(deckId));
+        const newCardsRemaining = Math.max(0, deckMaxNew - newIntroducedToday);
+
+        const candidateCards = [
             ...dueCards.slice(0, reviewsRemaining),
             ...newCards.slice(0, newCardsRemaining),
         ];
+
+        if (!this.plugin.settings.burySiblings) {
+            return candidateCards;
+        }
+
+        const reviewedTodayLogs = this.getTodayLogs();
+        const reviewedTodayCards = reviewedTodayLogs
+            .map(l => this.cards.get(l.cardId))
+            .filter((c): c is Card => c !== undefined);
+
+        const finalQueue: Card[] = [];
+        for (const card of candidateCards) {
+            const hasReviewedSibling = reviewedTodayCards.some(s => this.areSiblings(card, s));
+            if (hasReviewedSibling) continue;
+
+            const hasQueueSibling = finalQueue.some(q => this.areSiblings(card, q));
+            if (hasQueueSibling) continue;
+
+            finalQueue.push(card);
+        }
+
+        return finalQueue;
     }
 
     getAllCardsForStudy(deckId: string): Card[] {
@@ -824,7 +998,8 @@ export class DataManager {
             due: now, stability: 0, difficulty: 0, elapsed_days: 0,
             scheduled_days: 0, reps: 0, lapses: 0, state: State.New, learning_steps: 0,
         };
-        const schedulingCards = this.fsrs.repeat(fsrsCard, now);
+        const fsrs = this.getFsrsForCard(card);
+        const schedulingCards = fsrs.repeat(fsrsCard, now);
         const newFsrsData = schedulingCards[rating as Exclude<Rating, Rating.Manual>].card;
         this.fsrsDataStore[card.id] = newFsrsData;
         card.fsrsData = newFsrsData;
@@ -891,7 +1066,8 @@ export class DataManager {
             due: now, stability: 0, difficulty: 0, elapsed_days: 0,
             scheduled_days: 0, reps: 0, lapses: 0, state: State.New, learning_steps: 0,
         };
-        const schedulingCards = this.fsrs.repeat(fsrsCard, now);
+        const fsrs = this.getFsrsForCard(card);
+        const schedulingCards = fsrs.repeat(fsrsCard, now);
         const formatInterval = (days: number): string => {
             if (days < 1) return '<1d';
             if (days < 30) return `${Math.round(days)}d`;

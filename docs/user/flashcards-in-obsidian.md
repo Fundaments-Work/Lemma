@@ -74,9 +74,10 @@ What are the three stages of cellular respiration?
 1. Glycolysis
 2. The citric acid cycle
 3. The electron transport chain
+---end---
 ```
 
-The front is everything up to a line that is exactly `---`. The back runs until the next `---card---` or the end of the note, and a blank line does not end it, so anything you write after a card's back becomes part of that back. Put your next `---card---` after each card and keep other writing out of the way.
+The front is everything up to a line that is exactly `---`. The back runs until `---end---` (recommended), the next `---card---` or the end of the note. Adding `---end---` lets you write headings, outlines, and notes immediately following the card without them becoming part of the card's answer.
 
 ### Cloze deletions
 
