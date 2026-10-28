@@ -4,7 +4,7 @@
 
 ```bash
 npm ci
-npm test              # vitest test suite (100 tests)
+npm test              # vitest test suite (101 tests)
 npm run build         # typecheck + bundle
 npm run lint          # eslint with eslint-plugin-obsidianmd
 npm run lint:fix      # auto-fix lint
@@ -159,7 +159,7 @@ Use the 4-tab pattern from `FSRSSettingsTab`:
 ## Testing
 
 Validate by:
-1. `npm test` (Vitest: 100 tests covering card parsing, data manager, image occlusion, PouchDB persistence, renames, scheduling, undo, backup, import, 1.1.5 data compatibility and the review window)
+1. `npm test` (Vitest: 101 tests covering card parsing, data manager, image occlusion, PouchDB persistence, renames, scheduling, undo, backup, import, 1.1.5 data compatibility and the review window)
 2. `npm run lint` (ESLint: strict Obsidian plugin rules, zero warnings/errors required)
 3. `npm run build` (TypeScript check + esbuild production bundle)
 4. `node deploy.mjs <vault-path>` (deploy to test vault)

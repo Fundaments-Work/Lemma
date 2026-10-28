@@ -117,6 +117,8 @@ export class DataManager {
             await this.loadFromLegacyJSON();
         }
         await this.buildIndex();
+        this.reconcileGamification();
+        void this.save();
         this.isLoaded = true;
     }
 
@@ -1055,20 +1057,31 @@ export class DataManager {
         }
 
         this.updateGamification(now, rating, newFsrsData);
+        void this.save();
+    }
+
+    private toLocalDateString(date: Date): string {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
     private updateGamification(now: Date, rating: Rating, fsrsData: import('ts-fsrs').Card) {
         const g = this.plugin.settings.gamification;
-        const today = now.toISOString().slice(0, 10);
+        const today = this.toLocalDateString(now);
 
         // Streak
         if (g.lastReviewDate) {
-            const lastDate = new Date(g.lastReviewDate);
-            const diffDays = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-            if (diffDays === 1) {
-                g.currentStreak++;
-            } else if (diffDays > 1) {
-                g.currentStreak = 1;
+            if (g.lastReviewDate !== today) {
+                const prev = new Date(g.lastReviewDate + 'T12:00:00').getTime();
+                const curr = new Date(today + 'T12:00:00').getTime();
+                const diffDays = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
+                if (diffDays === 1) {
+                    g.currentStreak++;
+                } else if (diffDays > 1) {
+                    g.currentStreak = 1;
+                }
             }
         } else {
             g.currentStreak = 1;
@@ -1092,6 +1105,82 @@ export class DataManager {
         if (reviewsToday > g.mostReviewsInDay) {
             g.mostReviewsInDay = reviewsToday;
         }
+    }
+
+    reconcileGamification() {
+        if (!this.reviewHistory || this.reviewHistory.length === 0) return;
+
+        const g = this.plugin.settings.gamification;
+        g.totalCardsReviewed = Math.max(g.totalCardsReviewed, this.reviewHistory.length);
+
+        const reviewsPerDay: Record<string, number> = {};
+        let totalHistoricalXp = 0;
+
+        for (const log of this.reviewHistory) {
+            const dateStr = this.toLocalDateString(new Date(log.timestamp));
+            reviewsPerDay[dateStr] = (reviewsPerDay[dateStr] || 0) + 1;
+
+            const ratingMult = log.rating === Rating.Again ? 1 : log.rating === Rating.Hard ? 2 : log.rating === Rating.Good ? 3 : 4;
+            totalHistoricalXp += Math.round(10 * ratingMult);
+        }
+
+        if (g.totalXp === 0 && this.reviewHistory.length > 0) {
+            g.totalXp = totalHistoricalXp;
+        }
+
+        let maxReviewsInDay = g.mostReviewsInDay;
+        for (const count of Object.values(reviewsPerDay)) {
+            if (count > maxReviewsInDay) maxReviewsInDay = count;
+        }
+        g.mostReviewsInDay = maxReviewsInDay;
+
+        const uniqueDates = Object.keys(reviewsPerDay).sort();
+        if (uniqueDates.length === 0) return;
+
+        const dayDiff = (d1: string, d2: string): number => {
+            const ms1 = new Date(d1 + 'T12:00:00').getTime();
+            const ms2 = new Date(d2 + 'T12:00:00').getTime();
+            return Math.round((ms2 - ms1) / (1000 * 60 * 60 * 24));
+        };
+
+        // Longest streak
+        let longest = 1;
+        let chain = 1;
+        for (let i = 1; i < uniqueDates.length; i++) {
+            if (dayDiff(uniqueDates[i - 1], uniqueDates[i]) === 1) {
+                chain++;
+                if (chain > longest) longest = chain;
+            } else {
+                chain = 1;
+            }
+        }
+        if (longest > g.longestStreak) g.longestStreak = longest;
+
+        // Current streak
+        const now = new Date();
+        const todayStr = this.toLocalDateString(now);
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = this.toLocalDateString(yesterday);
+
+        const lastReviewDate = uniqueDates[uniqueDates.length - 1];
+        g.lastReviewDate = lastReviewDate;
+
+        if (lastReviewDate !== todayStr && lastReviewDate !== yesterdayStr) {
+            g.currentStreak = 0;
+        } else {
+            let currentStreak = 1;
+            for (let i = uniqueDates.length - 1; i > 0; i--) {
+                if (dayDiff(uniqueDates[i - 1], uniqueDates[i]) === 1) {
+                    currentStreak++;
+                } else {
+                    break;
+                }
+            }
+            g.currentStreak = Math.max(g.currentStreak, currentStreak);
+        }
+
+        if (g.currentStreak > g.longestStreak) g.longestStreak = g.currentStreak;
     }
 
     getGamificationStats(): Gamification {
@@ -1371,5 +1460,8 @@ export class DataManager {
         } else {
             void this.save();
         }
+
+        this.updateGamification(now, rating, newFsrsData);
+        void this.save();
     }
 }

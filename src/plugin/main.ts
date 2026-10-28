@@ -363,6 +363,7 @@ class FSRSFlashcardsPlugin extends Plugin {
         const data = (await this.loadData()) as PluginData | null;
         this.settings = Object.assign({}, DEFAULT_SETTINGS, data?.settings);
         this.settings.fsrsParams = Object.assign({}, DEFAULT_SETTINGS.fsrsParams, this.settings.fsrsParams);
+        this.settings.gamification = Object.assign({}, DEFAULT_SETTINGS.gamification, this.settings.gamification);
         this.databaseNameIsNew = !data?.settings?.databaseName;
         const appId = (this.app as unknown as { appId?: unknown }).appId;
         const vaultKey = typeof appId === 'string' && appId ? appId : this.app.vault.getName();
