@@ -656,10 +656,10 @@ export class DataManager {
             const blockIdMatch = paragraph.match(/\^([a-zA-Z0-9-]+)\s*$/);
             const context = breadcrumbs[startLine] ?? this.findCardContext(content, breadcrumbs, paragraph);
 
-            clozes.forEach(cloze => {
-                const clozeNum = cloze[1];
-                const originalCloze = cloze[0];
+            // Deduplicate cloze numbers (e.g. multiple ==c1::...== share the same card)
+            const clozeNumbers = [...new Set(clozes.map(m => m[1]))];
 
+            clozeNumbers.forEach(clozeNum => {
                 let cardId: string;
                 if (blockIdMatch) {
                     cardId = `${deckId}::${blockIdMatch[1]}-${clozeNum}`;
@@ -667,8 +667,20 @@ export class DataManager {
                     cardId = cyrb53hex(`${filePath}::${paragraph}::${clozeNum}`);
                 }
 
-                const front = paragraph.replace(originalCloze, '[...]').trim();
-                const back = paragraph.replace(/==c\d+::(.*?)==/g, '$1').trim();
+                const front = paragraph.replace(/==c(\d+)::(.*?)==/gs, (_match: string, num: string, body: string): string => {
+                    const colonIdx = body.indexOf('::');
+                    const answer = colonIdx !== -1 ? body.slice(0, colonIdx) : body;
+                    const hint = colonIdx !== -1 ? body.slice(colonIdx + 2) : '';
+                    if (num === clozeNum) {
+                        return hint ? `[${hint}]` : '[...]';
+                    }
+                    return answer;
+                }).trim();
+
+                const back = paragraph.replace(/==c\d+::(.*?)==/gs, (_match: string, body: string): string => {
+                    const colonIdx = body.indexOf('::');
+                    return colonIdx !== -1 ? body.slice(0, colonIdx) : body;
+                }).trim();
 
                 const card: Card = {
                     id: cardId,

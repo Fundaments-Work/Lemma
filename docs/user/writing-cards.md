@@ -63,9 +63,9 @@ The ==c1::mitochondrion== is the powerhouse of the ==c2::cell==. ^cloze-001
 - A block ID after the paragraph makes IDs stable: the card IDs become `<block-id>-1`, `<block-id>-2` and so on.
 - Write the marker exactly as `==c1::text==`, with no spaces inside `==c1::`.
 
-Use a different number for each blank. Two blanks with the same number in one paragraph produce a single card.
+Use a different number for each blank. Two blanks with the same number in one paragraph produce a single card with both blanks hidden together.
 
-Known behavior: when a paragraph has several clozes, the front hides only the cloze being tested. Other clozes in the same paragraph are left in their raw `==cN::text==` form on the front, which Obsidian renders as highlighted text. Keep paragraphs with one or two short clozes, or put each blank in its own paragraph, to avoid showing answers.
+When a paragraph has several clozes, each card hides its own blank with `[...]` while all other clozes in the paragraph are displayed cleanly as normal text. You can also provide an optional hint using `==c1::answer::hint==`, which displays `[hint]` on the front instead of `[...]`.
 
 To create a cloze quickly, select text in the editor and run **Create cloze from selection**, or right-click the selection and choose **Create cloze from selection**. See [Commands and shortcuts](commands-and-shortcuts.md).
 

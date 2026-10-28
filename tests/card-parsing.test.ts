@@ -429,8 +429,49 @@ tags: [flashcards]
 The ==c1::mitochondria== is the powerhouse of the ==c2::cell==.
 `);
             await dm.updateFile({ path: 'test-note.md', basename: 'test-note' } as never);
-            expect(dm.getAllCards()).toHaveLength(2);
-            expect(dm.getAllCards().every(c => c.type === 'cloze')).toBe(true);
+            const cards = dm.getAllCards();
+            expect(cards).toHaveLength(2);
+            expect(cards.every(c => c.type === 'cloze')).toBe(true);
+
+            // c1 card should hide mitochondria and show cell as plain text (no raw ==c2:: marker)
+            const c1Card = cards.find(c => c.front.includes('[...]') && c.front.includes('cell'));
+            expect(c1Card).toBeDefined();
+            expect(c1Card!.front).toBe('The [...] is the powerhouse of the cell.');
+            expect(c1Card!.front).not.toContain('==c2::');
+
+            // c2 card should hide cell and show mitochondria as plain text (no raw ==c1:: marker)
+            const c2Card = cards.find(c => c.front.includes('[...]') && c.front.includes('mitochondria'));
+            expect(c2Card).toBeDefined();
+            expect(c2Card!.front).toBe('The mitochondria is the powerhouse of the [...].');
+            expect(c2Card!.front).not.toContain('==c1::');
+        });
+
+        it('supports optional hints and shared cloze numbers', async () => {
+            const plugin = createMockPlugin();
+            const dm = new DataManager(plugin as never);
+            plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+                tags: [{ tag: '#flashcards', position: { start: { line: 0, col: 0, offset: 0 }, end: { line: 0, col: 0, offset: 0 } } }],
+            });
+            plugin.app.vault.read = vi.fn().mockResolvedValue(`---
+tags: [flashcards]
+---
+
+==c1::Canberra::capital== is in ==c2::Australia==, and ==c1::Wellington::capital== is in ==c2::New Zealand==.
+`);
+            await dm.updateFile({ path: 'test-note.md', basename: 'test-note' } as never);
+            const cards = dm.getAllCards();
+            // Should create 2 cards total (c1 and c2), not 4
+            expect(cards).toHaveLength(2);
+
+            const c1Card = cards.find(c => c.front.includes('[capital]'));
+            expect(c1Card).toBeDefined();
+            expect(c1Card!.front).toBe('[capital] is in Australia, and [capital] is in New Zealand.');
+            expect(c1Card!.back).toBe('Canberra is in Australia, and Wellington is in New Zealand.');
+
+            const c2Card = cards.find(c => c.front.includes('Canberra'));
+            expect(c2Card).toBeDefined();
+            expect(c2Card!.front).toBe('Canberra is in [...], and Wellington is in [...].');
+            expect(c2Card!.back).toBe('Canberra is in Australia, and Wellington is in New Zealand.');
         });
 
         it('does not include basic card content or ---end--- in a cloze card that follows immediately without a blank line', async () => {
@@ -504,7 +545,7 @@ Answer with ==c1::inline notation==
             await dm.updateFile({ path: realPath, basename: '01 - introduction to python' } as never);
 
             const cards = dm.getAllCards();
-            expect(cards).toHaveLength(27);
+            expect(cards).toHaveLength(26);
 
             for (const card of cards) {
                 expect(card.front).not.toMatch(/---\s*(?:end|card-end|card)\s*---/i);
@@ -513,11 +554,11 @@ Answer with ==c1::inline notation==
 
             const expCloze = cards.find(c => c.id.includes('fsrs-py1j2k3l4-1'));
             expect(expCloze).toBeDefined();
-            expect(expCloze!.front).toBe('The [...] operator is used for ==c2::exponentiation== in Python (e.g., `height ==c3::**== 2`). ^fsrs-py1j2k3l4');
+            expect(expCloze!.front).toBe('The [...] operator is used for exponentiation in Python (e.g., `height ** 2`). ^fsrs-py1j2k3l4');
 
             const typeCloze = cards.find(c => c.id.includes('fsrs-py9p0q1r2-1'));
             expect(typeCloze).toBeDefined();
-            expect(typeCloze!.front).toBe("Use the [...] function to check a variable's type (e.g., `type(bmi)` returns ==c2::`<class 'float'>`==). ^fsrs-py9p0q1r2");
+            expect(typeCloze!.front).toBe("Use the [...] function to check a variable's type (e.g., `type(bmi)` returns `<class 'float'>`). ^fsrs-py9p0q1r2");
         });
     });
 
