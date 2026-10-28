@@ -263,18 +263,44 @@ export class DataManager {
     private buildHeadingBreadcrumbs(lines: string[]): (string | undefined)[] {
         const breadcrumbs = new Array<string | undefined>(lines.length);
         const headingStack: string[] = [];
+        let inFrontmatter = false;
+        let inCodeBlock = false;
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
-            if (headingMatch) {
-                const level = headingMatch[1].length;
-                const text = headingMatch[2].trim();
-                while (headingStack.length >= level) {
-                    headingStack.pop();
-                }
-                headingStack.push(text);
+            const trimmed = line.trim();
+
+            if (i === 0 && trimmed === '---') {
+                inFrontmatter = true;
+                breadcrumbs[i] = undefined;
+                continue;
             }
+            if (inFrontmatter) {
+                if (trimmed === '---') {
+                    inFrontmatter = false;
+                }
+                breadcrumbs[i] = undefined;
+                continue;
+            }
+
+            if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {
+                inCodeBlock = !inCodeBlock;
+                breadcrumbs[i] = headingStack.length > 0 ? headingStack.join(' > ') : undefined;
+                continue;
+            }
+
+            if (!inCodeBlock) {
+                const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
+                if (headingMatch) {
+                    const level = headingMatch[1].length;
+                    const text = headingMatch[2].trim();
+                    while (headingStack.length >= level) {
+                        headingStack.pop();
+                    }
+                    headingStack.push(text);
+                }
+            }
+
             breadcrumbs[i] = headingStack.length > 0 ? headingStack.join(' > ') : undefined;
         }
 

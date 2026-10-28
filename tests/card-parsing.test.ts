@@ -559,6 +559,46 @@ Answer with ==c1::inline notation==
             const typeCloze = cards.find(c => c.id.includes('fsrs-py9p0q1r2-1'));
             expect(typeCloze).toBeDefined();
             expect(typeCloze!.front).toBe("Use the [...] function to check a variable's type (e.g., `type(bmi)` returns `<class 'float'>`). ^fsrs-py9p0q1r2");
+
+            // Python comments like "# Removing elements" inside code blocks must not leak as card context
+            const methodCard = cards.find(c => c.id.includes('fsrs-px3y4z5a6'));
+            expect(methodCard).toBeDefined();
+            expect(methodCard!.context).toBeUndefined();
+        });
+
+        it('ignores comments starting with # inside code blocks and frontmatter for heading breadcrumbs', async () => {
+            const plugin = createMockPlugin();
+            const dm = new DataManager(plugin as never);
+            plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+                tags: [{ tag: '#flashcards', position: { start: { line: 0, col: 0, offset: 0 }, end: { line: 0, col: 0, offset: 0 } } }],
+            });
+            plugin.app.vault.read = vi.fn().mockResolvedValue(`---
+tags: [flashcards]
+# YAML comment
+---
+
+# Real Section
+
+---card--- ^card-1
+Question 1
+---
+\`\`\`python
+# Python comment inside code
+print("hello")
+\`\`\`
+---end---
+
+---card--- ^card-2
+Question 2
+---
+Answer 2
+---end---
+`);
+            await dm.updateFile({ path: 'test-note.md', basename: 'test-note' } as never);
+            const cards = dm.getAllCards();
+            expect(cards).toHaveLength(2);
+            expect(cards[0].context).toBe('Real Section');
+            expect(cards[1].context).toBe('Real Section');
         });
     });
 

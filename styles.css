@@ -56,11 +56,6 @@ svg.lemma-icon rect {
     padding-bottom: max(var(--size-4-4), var(--safe-area-inset-bottom));
 }
 
-.fsrs-review-modal-immersive .modal-close-button,
-.fsrs-review-modal-immersive.modal-container .modal-close-button {
-    display: none !important;
-}
-
 .fsrs-review-modal-immersive.modal-container .modal-title {
     white-space: normal;
     line-height: 1.3;
@@ -72,6 +67,16 @@ svg.lemma-icon rect {
     align-items: center;
     justify-content: space-between;
     gap: var(--size-4-2);
+    padding-right: 44px;
+}
+
+.fsrs-review-modal-immersive .modal-close-button {
+    position: absolute;
+    top: var(--size-4-4);
+    right: var(--size-4-4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .fsrs-review-modal-immersive .modal-header-controls,

@@ -80,14 +80,6 @@ export class ReviewModal extends Modal {
         });
         this.modalEl.find('.modal-title').addClass('fsrs-card-info-title');
 
-        // Remove Obsidian's default close button from the DOM to prevent duplicate/overlapping icons
-        this.modalEl.querySelectorAll?.('.modal-close-button')?.forEach(btn => btn.remove());
-        this.containerEl.querySelectorAll?.('.modal-close-button')?.forEach(btn => btn.remove());
-        const defaultClose = this.modalEl.querySelector?.('.modal-close-button');
-        if (defaultClose && typeof defaultClose.remove === 'function') {
-            defaultClose.remove();
-        }
-
         const headerControls = this.modalEl.querySelector('.modal-header-controls')
             ?? this.modalEl.querySelector('.modal-header')?.createDiv({ cls: 'fsrs-header-actions' });
         if (headerControls) {
@@ -105,11 +97,6 @@ export class ReviewModal extends Modal {
                 void this.app.workspace.openLinkText(filePath, filePath);
                 this.close();
             });
-
-            const closeBtn = headerControls.createDiv({ cls: 'clickable-icon' });
-            setIcon(closeBtn, 'x');
-            closeBtn.setAttribute('aria-label', 'Close');
-            closeBtn.addEventListener('click', () => this.close());
         }
 
         const container = this.contentEl.createDiv({ cls: 'fsrs-review-container' });
