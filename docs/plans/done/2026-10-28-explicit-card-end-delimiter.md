@@ -1,8 +1,8 @@
 # Design Plan: Explicit Card End Delimiter (`---end---`)
 
-- **Status**: In progress
-- **Date**: 2026-10-28
-- **Target Release**: v1.3.0
+- **Status**: Done
+- **Date**: 2026-10-28 (Completed: 2026-10-31, shipped in v1.2.1)
+- **Target Release**: v1.2.1
 - **Implementation**: `src/data/DataManager.ts`, `src/plugin/main.ts`, `src/ui/CreateCardModal.ts`, `src/data/importCards.ts`, `README.md`, `FLASHCARD_GUIDE.md`, `docs/user/writing-cards.md`, `tests/card-parsing.test.ts`
 
 ## 1. Problem Statement

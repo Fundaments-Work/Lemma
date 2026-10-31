@@ -83,4 +83,4 @@ Lemma makes no network requests unless you turn on sync. It has no telemetry or 
 
 ## About this guide
 
-This guide describes Lemma 1.2.0, which requires Obsidian 1.7.2 or later. Lemma is open source under the MIT license. Report problems or request features on [GitHub](https://github.com/Fundaments-Work/Lemma/issues).
+This guide describes Lemma 1.2.1, which requires Obsidian 1.7.2 or later. Lemma is open source under the MIT license. Report problems or request features on [GitHub](https://github.com/Fundaments-Work/Lemma/issues).

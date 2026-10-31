@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.1] - 2026-10-28
+## [1.2.1] - 2026-10-31
 
 This release adds explicit card ending delimiters, sibling card burying, per-deck frontmatter settings overrides, leech detection, atomic review log batching, automatic streak and XP recovery from review logs, cloze hint support, and fixes review window button layout, comment-based breadcrumbs, and multi-cloze card formatting.
 
@@ -24,6 +24,7 @@ This release adds explicit card ending delimiters, sibling card burying, per-dec
 
 ### Changed
 - **Settings tab clarity:** Reorganized the settings tab into intuitive, task-focused sections with clear descriptions and frontmatter override examples.
+- **README and metrics:** Aligned repository badges, install links, and download counters with the Fundaments visual language and Theorem design tokens.
 
 ## [1.2.0] - 2026-10-20
 
